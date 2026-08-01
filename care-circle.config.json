@@ -1,0 +1,322 @@
+{
+  "$comment": "Build config for 'Care Circle' — aging-parent care coordination hub. Feed this to a build script that provisions the workspace via the Notion API. Requires API version 2025-09-03 or later (data-source model + Views API).",
+  "meta": {
+    "template_name": "Care Circle",
+    "notion_api_version": "2026-04-01",
+    "parent_page_id": "REPLACE_WITH_PAGE_ID",
+    "build_order": [
+      "contacts",
+      "care_team",
+      "conditions",
+      "medications",
+      "care_log",
+      "appointments",
+      "coverage",
+      "expenses",
+      "documents"
+    ],
+    "note_on_build_order": "Relations must be created after both sides exist. Build script should do two passes: pass 1 creates data sources with non-relation properties, pass 2 patches in relation and rollup properties."
+  },
+
+  "databases": [
+    {
+      "key": "contacts",
+      "title": "Providers & Contacts",
+      "icon": "📇",
+      "description": "Every human or org involved in care. Doctors, pharmacy, home health agency, the neighbor with a spare key.",
+      "properties": {
+        "Name": { "type": "title" },
+        "Role": {
+          "type": "select",
+          "options": ["Primary Care", "Specialist", "Pharmacy", "Home Health", "Facility", "Attorney", "Financial", "Neighbor/Friend", "Insurance", "Other"]
+        },
+        "Specialty": { "type": "rich_text" },
+        "Phone": { "type": "phone_number" },
+        "After-Hours Phone": { "type": "phone_number" },
+        "Email": { "type": "email" },
+        "Address": { "type": "rich_text" },
+        "Portal URL": { "type": "url" },
+        "Login Notes": { "type": "rich_text", "$comment": "Where the credentials live — NOT the credentials themselves. Say this explicitly in the template copy." },
+        "Notes": { "type": "rich_text" },
+        "Active": { "type": "checkbox", "default": true }
+      },
+      "views": [
+        { "name": "By Role", "type": "board", "group_by": "Role", "filter": { "property": "Active", "checkbox": { "equals": true } } },
+        { "name": "Quick Call List", "type": "table", "sorts": [{ "property": "Role", "direction": "ascending" }] }
+      ]
+    },
+
+    {
+      "key": "care_team",
+      "title": "Care Team",
+      "icon": "🤝",
+      "description": "The people sharing the load. Drives expense splitting and coverage assignment.",
+      "properties": {
+        "Name": { "type": "title" },
+        "Relationship": { "type": "select", "options": ["Child", "Spouse", "Sibling", "Grandchild", "Paid Caregiver", "Friend", "Other"] },
+        "Phone": { "type": "phone_number" },
+        "Email": { "type": "email" },
+        "Location": { "type": "rich_text", "$comment": "Distance matters. The out-of-state sibling can take on admin instead of visits." },
+        "Can Help With": { "type": "multi_select", "options": ["Visits", "Transport", "Meals", "Medical Admin", "Finances", "Legal", "Home Repair", "Overnight"] },
+        "Expense Share %": { "type": "number", "format": "percent", "$comment": "Defaults to equal split; families often weight by income or proximity." },
+        "Total Paid": { "type": "rollup", "relation": "Expenses", "target_property": "Amount", "function": "sum" },
+        "Fair Share": { "type": "formula", "expression": "round(prop(\"Expense Share %\") * <TOTAL_EXPENSES>)" },
+        "Balance": { "type": "formula", "expression": "prop(\"Total Paid\") - prop(\"Fair Share\")", "$comment": "Positive = owed money. Negative = owes money. Surface this prominently." }
+      },
+      "views": [
+        { "name": "Who Owes What", "type": "table", "sorts": [{ "property": "Balance", "direction": "ascending" }] }
+      ]
+    },
+
+    {
+      "key": "conditions",
+      "title": "Conditions & Allergies",
+      "icon": "🩺",
+      "description": "Standing medical facts. Feeds the ER sheet.",
+      "properties": {
+        "Name": { "type": "title" },
+        "Type": { "type": "select", "options": ["Diagnosis", "Allergy", "Surgery/History", "Device/Implant", "Dietary Restriction"] },
+        "Severity": { "type": "select", "options": ["Critical", "Significant", "Minor"] },
+        "Diagnosed": { "type": "date" },
+        "Managed By": { "type": "relation", "target": "contacts" },
+        "Reaction / Notes": { "type": "rich_text" },
+        "Show on ER Sheet": { "type": "checkbox", "default": true }
+      },
+      "views": [
+        { "name": "ER Sheet — Conditions", "type": "table", "filter": { "property": "Show on ER Sheet", "checkbox": { "equals": true } }, "sorts": [{ "property": "Severity", "direction": "ascending" }] },
+        { "name": "All", "type": "table" }
+      ]
+    },
+
+    {
+      "key": "medications",
+      "title": "Medications",
+      "icon": "💊",
+      "description": "Current and discontinued. The discontinued history matters — doctors ask what's been tried.",
+      "properties": {
+        "Medication": { "type": "title" },
+        "Dose": { "type": "rich_text" },
+        "Frequency": { "type": "select", "options": ["Once daily", "Twice daily", "Three times daily", "Four times daily", "Weekly", "As needed", "Other"] },
+        "Time of Day": { "type": "multi_select", "options": ["Morning", "Midday", "Evening", "Bedtime", "With food", "Empty stomach"] },
+        "Purpose": { "type": "rich_text" },
+        "Prescriber": { "type": "relation", "target": "contacts" },
+        "Pharmacy": { "type": "relation", "target": "contacts" },
+        "Rx Number": { "type": "rich_text" },
+        "Started": { "type": "date" },
+        "Discontinued": { "type": "date" },
+        "Reason Stopped": { "type": "rich_text" },
+        "Status": { "type": "status", "groups": { "To-do": ["Pending"], "In progress": ["Active"], "Complete": ["Discontinued"] } },
+        "Next Refill": { "type": "date" },
+        "Days to Refill": { "type": "formula", "expression": "dateBetween(prop(\"Next Refill\"), now(), \"days\")" },
+        "Refill Alert": { "type": "formula", "expression": "if(and(prop(\"Status\") == \"Active\", prop(\"Days to Refill\") <= 7), \"⚠️ Refill soon\", \"\")" }
+      },
+      "views": [
+        { "name": "ER Sheet — Current Meds", "type": "table", "filter": { "property": "Status", "status": { "equals": "Active" } }, "$comment": "This is the printable one. Keep columns to: Medication, Dose, Frequency, Purpose, Prescriber." },
+        { "name": "Daily Schedule", "type": "board", "group_by": "Time of Day", "filter": { "property": "Status", "status": { "equals": "Active" } } },
+        { "name": "Refills Due", "type": "table", "filter": { "property": "Days to Refill", "number": { "less_than_or_equal_to": 14 } } },
+        { "name": "Discontinued History", "type": "table", "filter": { "property": "Status", "status": { "equals": "Discontinued" } } }
+      ]
+    },
+
+    {
+      "key": "care_log",
+      "title": "Care Log",
+      "icon": "📓",
+      "description": "Dated observations. The single most valuable database here — it turns 'Mom seems worse lately' into evidence a doctor can act on, and documents the timeline for care-level decisions.",
+      "properties": {
+        "Entry": { "type": "title" },
+        "Date": { "type": "date" },
+        "Observed By": { "type": "relation", "target": "care_team" },
+        "Category": {
+          "type": "multi_select",
+          "options": ["Mobility", "Cognition/Memory", "Mood", "Appetite", "Sleep", "Pain", "Continence", "Medication Issue", "Fall", "Social", "Home Safety", "Financial Confusion"]
+        },
+        "Concern Level": { "type": "select", "options": ["Routine", "Worth watching", "Concerning", "Urgent"] },
+        "Details": { "type": "rich_text" },
+        "Related Appointment": { "type": "relation", "target": "appointments" },
+        "Flag for Doctor": { "type": "checkbox" }
+      },
+      "views": [
+        { "name": "Recent", "type": "table", "sorts": [{ "property": "Date", "direction": "descending" }] },
+        { "name": "Flagged for Next Visit", "type": "table", "filter": { "property": "Flag for Doctor", "checkbox": { "equals": true } }, "$comment": "Walk into the appointment with this open." },
+        { "name": "By Category", "type": "board", "group_by": "Category" },
+        { "name": "Timeline", "type": "calendar", "date_property": "Date" },
+        { "name": "Trend", "type": "chart", "x": "Date", "group_by": "Concern Level", "$comment": "Shows escalation over months. Powerful in a family conversation about moving to assisted living." }
+      ]
+    },
+
+    {
+      "key": "appointments",
+      "title": "Appointments",
+      "icon": "📅",
+      "description": "Before-and-after structure. The 'Questions to Ask' field prevents the classic failure where you leave the office having forgotten the one thing you meant to raise.",
+      "properties": {
+        "Appointment": { "type": "title" },
+        "Date": { "type": "date", "include_time": true },
+        "Provider": { "type": "relation", "target": "contacts" },
+        "Who's Taking Them": { "type": "relation", "target": "care_team" },
+        "Transport Needed": { "type": "checkbox" },
+        "Questions to Ask": { "type": "rich_text" },
+        "What Happened": { "type": "rich_text" },
+        "Med Changes": { "type": "relation", "target": "medications" },
+        "Follow-Up Needed": { "type": "checkbox" },
+        "Follow-Up By": { "type": "date" },
+        "Status": { "type": "status", "groups": { "To-do": ["Scheduled", "Needs scheduling"], "In progress": ["Today"], "Complete": ["Done", "Cancelled"] } }
+      },
+      "views": [
+        { "name": "Upcoming", "type": "calendar", "date_property": "Date" },
+        { "name": "Needs a Driver", "type": "table", "filter": { "and": [{ "property": "Transport Needed", "checkbox": { "equals": true } }, { "property": "Status", "status": { "equals": "Scheduled" } }] } },
+        { "name": "Open Follow-Ups", "type": "table", "filter": { "property": "Follow-Up Needed", "checkbox": { "equals": true } } },
+        { "name": "Visit History", "type": "table", "sorts": [{ "property": "Date", "direction": "descending" }] }
+      ]
+    },
+
+    {
+      "key": "coverage",
+      "title": "Coverage Schedule",
+      "icon": "🗓️",
+      "description": "Who's got which day. Solves the 'I thought you were going Thursday' problem.",
+      "properties": {
+        "What": { "type": "title" },
+        "Date": { "type": "date" },
+        "Assigned To": { "type": "relation", "target": "care_team" },
+        "Type": { "type": "select", "options": ["Visit", "Transport", "Meal", "Phone check-in", "Overnight", "Errand", "Admin", "Home maintenance"] },
+        "Status": { "type": "status", "groups": { "To-do": ["Open", "Claimed"], "In progress": ["Today"], "Complete": ["Done", "Skipped"] } },
+        "Notes": { "type": "rich_text" }
+      },
+      "views": [
+        { "name": "This Month", "type": "calendar", "date_property": "Date" },
+        { "name": "Unclaimed", "type": "table", "filter": { "property": "Status", "status": { "equals": "Open" } }, "$comment": "The guilt-free ask. Nobody has to text the group chat." },
+        { "name": "By Person", "type": "board", "group_by": "Assigned To" }
+      ]
+    },
+
+    {
+      "key": "expenses",
+      "title": "Shared Expenses",
+      "icon": "💵",
+      "description": "Running tally. Prevents the slow resentment build that wrecks sibling relationships.",
+      "properties": {
+        "Expense": { "type": "title" },
+        "Date": { "type": "date" },
+        "Amount": { "type": "number", "format": "dollar" },
+        "Paid By": { "type": "relation", "target": "care_team" },
+        "Category": { "type": "select", "options": ["Medical", "Prescriptions", "Home care", "Groceries", "Household", "Transport", "Legal", "Facility", "Insurance", "Other"] },
+        "Reimbursable": { "type": "checkbox" },
+        "Paid From": { "type": "select", "options": ["Parent's funds", "Family funds", "Personal — split", "Personal — gift"] },
+        "Receipt": { "type": "files" },
+        "Tax Deductible?": { "type": "checkbox", "$comment": "Medical expenses for a dependent parent may be deductible. Include a note pointing to IRS Pub 502 — and a clear line that this isn't tax advice." },
+        "Notes": { "type": "rich_text" }
+      },
+      "views": [
+        { "name": "All Expenses", "type": "table", "sorts": [{ "property": "Date", "direction": "descending" }] },
+        { "name": "By Person", "type": "board", "group_by": "Paid By" },
+        { "name": "By Category", "type": "chart", "group_by": "Category", "aggregate": "Amount" },
+        { "name": "Tax Year", "type": "table", "filter": { "property": "Tax Deductible?", "checkbox": { "equals": true } } }
+      ]
+    },
+
+    {
+      "key": "documents",
+      "title": "Key Documents & Accounts",
+      "icon": "🗂️",
+      "description": "Where things live. Not the documents themselves — the map to them.",
+      "properties": {
+        "Document": { "type": "title" },
+        "Type": {
+          "type": "select",
+          "options": ["Power of Attorney", "Healthcare Proxy", "Advance Directive/DNR", "Will/Trust", "Deed", "Insurance Policy", "Medicare/Medicaid", "Bank Account", "Investment", "Pension/SS", "Tax Return", "Vehicle Title", "Other"]
+        },
+        "Where the Original Is": { "type": "rich_text" },
+        "Who Has Copies": { "type": "relation", "target": "care_team" },
+        "Institution": { "type": "relation", "target": "contacts" },
+        "Account/Policy Number": { "type": "rich_text", "$comment": "Warn users in template copy: Notion is not a password manager. Store last-4 only, or a pointer to where the full number lives." },
+        "Executed / Effective": { "type": "date" },
+        "Review By": { "type": "date" },
+        "Status": { "type": "select", "options": ["In place", "Needs updating", "Missing — action needed", "In progress"] }
+      },
+      "views": [
+        { "name": "Gaps", "type": "table", "filter": { "property": "Status", "select": { "does_not_equal": "In place" } }, "$comment": "Most families discover here that there's no healthcare proxy. That realization alone is worth the purchase price." },
+        { "name": "By Type", "type": "board", "group_by": "Type" }
+      ]
+    }
+  ],
+
+  "pages": [
+    {
+      "key": "er_sheet",
+      "title": "🚨 Emergency Sheet",
+      "position": "top",
+      "description": "The print-and-go page. Design for one sheet of paper, black and white, readable at arm's length.",
+      "blocks": [
+        { "type": "callout", "text": "Print this. Keep a copy in the car, in the go-bag, and on the fridge. Update after every med change." },
+        { "type": "heading_2", "text": "Patient" },
+        { "type": "paragraph", "text": "Name / DOB / Address / Insurance ID / Medicare number" },
+        { "type": "heading_2", "text": "In an Emergency, Call" },
+        { "type": "paragraph", "text": "Healthcare proxy name + phone, then backup" },
+        { "type": "heading_2", "text": "Allergies & Conditions" },
+        { "type": "linked_view", "source": "conditions", "view": "ER Sheet — Conditions" },
+        { "type": "heading_2", "text": "Current Medications" },
+        { "type": "linked_view", "source": "medications", "view": "ER Sheet — Current Meds" },
+        { "type": "heading_2", "text": "Advance Directive" },
+        { "type": "paragraph", "text": "DNR status and where the signed document is located" }
+      ]
+    },
+    {
+      "key": "dashboard",
+      "title": "Care Circle — Home",
+      "position": "root",
+      "blocks": [
+        { "type": "callout", "text": "Start here → Setup Guide" },
+        { "type": "columns", "children": [
+          { "blocks": [
+            { "type": "heading_3", "text": "This Week" },
+            { "type": "linked_view", "source": "coverage", "view": "This Month" },
+            { "type": "linked_view", "source": "appointments", "view": "Upcoming" }
+          ]},
+          { "blocks": [
+            { "type": "heading_3", "text": "Needs Attention" },
+            { "type": "linked_view", "source": "coverage", "view": "Unclaimed" },
+            { "type": "linked_view", "source": "medications", "view": "Refills Due" },
+            { "type": "linked_view", "source": "documents", "view": "Gaps" }
+          ]}
+        ]},
+        { "type": "heading_3", "text": "Recent Observations" },
+        { "type": "linked_view", "source": "care_log", "view": "Recent" }
+      ]
+    },
+    {
+      "key": "setup",
+      "title": "Setup Guide",
+      "description": "15-minute onboarding. Ordered by urgency, not by database. Buyers who finish setup don't refund.",
+      "blocks": [
+        { "type": "to_do", "text": "Add everyone to Care Team (5 min)" },
+        { "type": "to_do", "text": "Enter current medications from the pill bottles (10 min) — this alone is worth doing today" },
+        { "type": "to_do", "text": "Add primary doctor and pharmacy to Contacts" },
+        { "type": "to_do", "text": "Fill in the Emergency Sheet header and print it" },
+        { "type": "to_do", "text": "Audit Key Documents — mark what's missing" },
+        { "type": "to_do", "text": "Share this page with siblings (Share → Invite)" },
+        { "type": "callout", "text": "Everything else can wait. Come back to Coverage and Expenses when you're ready." }
+      ]
+    },
+    {
+      "key": "conversations",
+      "title": "Hard Conversations Prep",
+      "description": "Content page, not a database. High perceived value, zero build cost, and it's what makes this feel like a product rather than a spreadsheet.",
+      "blocks": [
+        { "type": "heading_2", "text": "Talking about giving up the car keys" },
+        { "type": "heading_2", "text": "Raising assisted living without a fight" },
+        { "type": "heading_2", "text": "Questions to ask before choosing a facility" },
+        { "type": "heading_2", "text": "Splitting the load when one sibling does everything" },
+        { "type": "heading_2", "text": "What to ask at a first neurology appointment" }
+      ]
+    }
+  ],
+
+  "build_notes": {
+    "gallery_views": "The Views API currently rejects gallery type — build any gallery views manually in the UI after the script runs.",
+    "database_templates": "Add these by hand: a 'New Appointment' template pre-filled with the Questions to Ask structure, and a 'Daily Check-In' care log template. API support is limited and these matter a lot for usability.",
+    "privacy_copy": "Include a visible disclaimer page: this is not HIPAA-covered storage, don't put SSNs or passwords in it, and it isn't medical or legal advice. Protects you and builds trust.",
+    "lite_version": "Free tier = Emergency Sheet + Medications + Contacts only. That's the lead magnet. It's genuinely useful alone, and the gap to the paid version is obvious the moment a second sibling gets involved."
+  }
+}

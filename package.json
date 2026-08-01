@@ -1,0 +1,21 @@
+{
+  "name": "care-circle-provisioner",
+  "version": "1.0.0",
+  "description": "Provisions the 'Care Circle' aging-parent care-coordination workspace in Notion from a build config, using the data-source API (2025-09-03+).",
+  "type": "module",
+  "bin": {
+    "care-circle-provision": "provision.js"
+  },
+  "scripts": {
+    "start": "node provision.js",
+    "provision": "node provision.js",
+    "dry-run": "DRY_RUN=1 node provision.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@notionhq/client": "^5.1.0"
+  },
+  "license": "MIT"
+}
