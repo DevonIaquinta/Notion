@@ -34,7 +34,7 @@ function Section({
   return (
     <section
       className="card p-5"
-      style={active ? { borderColor: "var(--accent)" } : undefined}
+      style={active ? { borderTop: "2px solid var(--accent)" } : undefined}
     >
       <div className="mb-4 flex items-baseline justify-between">
         <h2 className="display text-xl">{title}</h2>
@@ -66,7 +66,7 @@ export default async function VentureCaseFile({ params }: { params: { id: string
   const advanceLabel = launched
     ? "Launched"
     : next
-      ? `Advance → ${STAGE_META[next].label}`
+      ? `Advance to ${STAGE_META[next].label.toLowerCase()}`
       : "Mark launched";
 
   const stageIndex = ["KILL_CRITERIA", "ASSUMPTION_MAPPING", "EVIDENCE", "OFFER", "FIRST_DOLLAR"].indexOf(stage);
@@ -81,7 +81,7 @@ export default async function VentureCaseFile({ params }: { params: { id: string
       <Card className="p-6">
         <div className="flex flex-wrap items-center gap-2">
           <Eyebrow>
-            {killed ? "Killed" : launched ? "Launched" : v.status === "PARKED" ? "Parked" : "Active venture"}
+            {killed ? "Closed case" : launched ? "Launched" : v.status === "PARKED" ? "Parked case" : "Active case"}
           </Eyebrow>
         </div>
         <h1 className="display mt-2 text-3xl">{v.title}</h1>
@@ -137,7 +137,7 @@ export default async function VentureCaseFile({ params }: { params: { id: string
 
         {v.status === "PARKED" && (
           <p className="mt-4 text-sm text-ink-muted">
-            This venture is parked. Re-activate it from the{" "}
+            This case is parked. Reopen it from the{" "}
             <Link href="/ventures/new" className="underline">
               intake page
             </Link>{" "}
@@ -147,7 +147,7 @@ export default async function VentureCaseFile({ params }: { params: { id: string
 
         <div className="mt-5">
           <Link href={`/ventures/${v.id}/export`} className="btn no-print">
-            Export case file →
+            Export case file
           </Link>
         </div>
       </Card>
@@ -248,8 +248,8 @@ export default async function VentureCaseFile({ params }: { params: { id: string
             {[
               "Put the exact offer in front of one qualified person.",
               "Ask for the money — a deposit, a pre-order, or full payment.",
-              "Collect it with whatever payment method you already have. No new tools.",
-              "When real money lands, mark the venture launched.",
+              "Collect it with a payment method you already have. No new tools.",
+              "When the payment lands, mark the case launched.",
             ].map((item, i) => (
               <li key={i} className="flex gap-2">
                 <span className="mono text-ink-faint">{i + 1}.</span>

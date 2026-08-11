@@ -35,7 +35,7 @@ export default async function Home() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-baseline justify-between">
-        <Eyebrow>Active venture</Eyebrow>
+        <Eyebrow>Active case</Eyebrow>
         <span className="eyebrow">
           {parkedCount} parked · {killedCount} in graveyard
         </span>
@@ -50,7 +50,7 @@ export default async function Home() {
 
         <div className="mt-6 border-l-2 pl-4" style={{ borderColor: "var(--accent)" }}>
           <div className="eyebrow" style={{ color: "var(--accent)" }}>
-            Your next action
+            Next action
           </div>
           <p className="rubric mt-1 text-xl">{action}</p>
           <p className="mt-2 text-sm text-ink-muted">
@@ -64,7 +64,7 @@ export default async function Home() {
 
         <div className="mt-6 flex flex-wrap gap-3">
           <Link href={`/ventures/${full.id}`} className="btn btn-primary">
-            Open the case file →
+            Open case
           </Link>
           <Link href="/graveyard" className="btn">
             Graveyard
@@ -73,8 +73,7 @@ export default async function Home() {
       </Card>
 
       <p className="text-sm text-ink-faint">
-        One idea at a time. Switching is allowed from the case file, but it costs a written
-        reason.
+        One case at a time. You can switch from the case file, but it costs a written reason.
       </p>
     </div>
   );
@@ -85,15 +84,15 @@ function Onboarding() {
     <div className="max-w-measure py-6">
       <Eyebrow>Start here</Eyebrow>
       <h1 className="display mt-3 text-4xl leading-tight">
-        From “I want to start something” to evidence someone will pay you.
+        Take one idea from “worth considering” to evidence someone will pay.
       </h1>
       <p className="mt-4 text-ink-muted">
-        This is a workbench, not a chatbot. It walks one idea through a fixed sequence of
-        stages and refuses to let you skip the hard one — talking to real people. Before any
-        idea work, it needs your constraints.
+        This is a workbench, not a chat. It moves one idea through a fixed sequence of stages
+        and won't let you skip the hard one — talking to real people. It needs your constraints
+        before any idea work.
       </p>
       <Link href="/constraints" className="btn btn-primary mt-6">
-        Define your constraints →
+        Set your constraints
       </Link>
     </div>
   );
@@ -108,14 +107,14 @@ function NoActiveVenture({
 }) {
   return (
     <div className="max-w-measure py-6">
-      <Eyebrow>No active venture</Eyebrow>
-      <h1 className="display mt-3 text-3xl">Pick up one idea.</h1>
+      <Eyebrow>No active case</Eyebrow>
+      <h1 className="display mt-3 text-3xl">Open one case.</h1>
       <p className="mt-3 text-ink-muted">
-        Bring an idea or have a few generated from your constraints. Only one runs at a time.
+        Bring an idea, or draft a few from your constraints. One runs at a time.
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
         <Link href="/ventures/new" className="btn btn-primary">
-          Start a venture →
+          Open a case
         </Link>
         {parkedCount > 0 && (
           <Link href="/ventures/new#parked" className="btn">

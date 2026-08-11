@@ -10,32 +10,33 @@ export async function Masthead() {
       className="no-print sticky top-0 z-20"
       style={{ backgroundColor: "var(--paper)", borderBottom: "1px solid var(--rule)" }}
     >
-      <div className="mx-auto flex max-w-case items-center justify-between px-5 py-3">
+      <div className="mx-auto flex max-w-case flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <Link href="/" className="flex items-baseline gap-2">
           <span className="display text-lg" style={{ letterSpacing: "-0.02em" }}>
             Founder Workbench
           </span>
-          <span className="eyebrow hidden sm:inline">case file</span>
+          <span className="eyebrow">case file</span>
         </Link>
 
         {user ? (
-          <nav className="flex items-center gap-4 text-sm">
-            <Link href="/" className="hover:underline">
+          <nav className="-mx-1 flex items-center gap-x-4 gap-y-1 text-sm">
+            <Link href="/" className="px-1 hover:underline">
               Workbench
             </Link>
-            <Link href="/constraints" className="hover:underline">
+            <Link href="/constraints" className="px-1 hover:underline">
               Constraints
             </Link>
-            <Link href="/graveyard" className="hover:underline">
+            <Link href="/graveyard" className="px-1 hover:underline">
               Graveyard
             </Link>
             <form
+              className="ml-auto sm:ml-0"
               action={async () => {
                 "use server";
                 await signOut({ redirectTo: "/sign-in" });
               }}
             >
-              <button type="submit" className="text-ink-faint hover:text-ink hover:underline">
+              <button type="submit" className="px-1 text-ink-faint hover:text-ink hover:underline">
                 Sign out
               </button>
             </form>

@@ -166,20 +166,20 @@ async function main() {
       {
         ventureId: active.id,
         stage: "IDEA_INTAKE",
-        decision: "Started venture: Preventive HVAC checks for dental offices",
-        reasoning: "Leans on HVAC background + sister's dental network.",
+        decision: "Opened case: Preventive HVAC checks for dental offices",
+        reasoning: "Leans on HVAC background and sister's dental network.",
       },
       {
         ventureId: active.id,
         stage: "KILL_CRITERIA",
-        decision: "Advanced to Assumption mapping",
-        reasoning: "Gate cleared: 3 falsifiable kill criteria written.",
+        decision: "Advanced to assumption mapping",
+        reasoning: "Gate clear — Write 3 kill criteria, each falsifiable.",
       },
       {
         ventureId: active.id,
         stage: "ASSUMPTION_MAPPING",
-        decision: "Advanced to Evidence",
-        reasoning: "Gate cleared: two FATAL assumptions identified (willingness-to-pay, pain frequency).",
+        decision: "Advanced to evidence",
+        reasoning: "Gate clear — Mark at least one assumption fatal.",
       },
     ],
   });
@@ -221,7 +221,7 @@ async function main() {
         decisionLog: {
           create: {
             stage: k.currentStage,
-            decision: "Killed the venture",
+            decision: "Killed case",
             reasoning: k.killReason,
           },
         },

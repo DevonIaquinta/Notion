@@ -32,7 +32,7 @@ export function GraveyardPatterns() {
             })
           }
         >
-          {pending ? "Reading…" : "Find the pattern"}
+          {pending ? "Reading…" : "Find patterns"}
         </button>
       </div>
 

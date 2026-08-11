@@ -82,8 +82,8 @@ export function OfferPanel({ ventureId, offer }: { ventureId: string; offer: Off
         </button>
       </div>
       <p className="text-xs text-ink-faint">
-        To clear this gate you also need one PRICE_TEST evidence entry — log what happened when
-        you put the price in front of a real person.
+        To clear this gate you also need one price test — log what happened when you put the
+        price in front of a real person.
       </p>
     </div>
   );

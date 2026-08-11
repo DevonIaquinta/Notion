@@ -80,14 +80,14 @@ export function IdeaIntake() {
 
         <div>
           <button type="submit" disabled={pending} className="btn btn-primary">
-            {pending ? "Creating…" : "Make this the active venture →"}
+            {pending ? "Opening…" : "Open case"}
           </button>
         </div>
       </form>
 
       {/* Constrained generation — few, tightly derived from constraints. */}
       <div className="card p-5">
-        <div className="eyebrow">Or generate a few — derived from your constraints</div>
+        <div className="eyebrow">Or draft a few — derived from your constraints</div>
         <p className="mt-2 text-sm text-ink-muted">
           At most five, each with a stated reason it fits you specifically. Not a firehose.
         </p>
@@ -112,7 +112,7 @@ export function IdeaIntake() {
               })
             }
           >
-            {generating ? "Thinking…" : "Generate"}
+            {generating ? "Drafting…" : "Draft ideas"}
           </button>
         </div>
 

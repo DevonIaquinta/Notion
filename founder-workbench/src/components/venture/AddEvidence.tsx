@@ -57,7 +57,7 @@ export function AddEvidence({
   if (!open) {
     return (
       <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
-        + Log evidence
+        Log evidence
       </button>
     );
   }
@@ -124,7 +124,7 @@ export function AddEvidence({
               })
             }
           >
-            {qLoading ? "Writing…" : "Write interview questions for this assumption"}
+            {qLoading ? "Drafting…" : "Draft interview questions"}
           </button>
           {questions && (
             <div className="mt-3 p-3" style={{ border: "1px solid var(--rule)", backgroundColor: "var(--paper)" }}>
@@ -185,7 +185,7 @@ export function AddEvidence({
             })
           }
         >
-          {checking ? "Checking…" : "Does this test the claim?"}
+          {checking ? "Checking…" : "Check this evidence"}
         </button>
       </div>
 
@@ -239,7 +239,7 @@ export function AddEvidence({
             })
           }
         >
-          {pending ? "Logging…" : "Add to the record"}
+          {pending ? "Logging…" : "Log evidence"}
         </button>
         <button type="button" className="btn" onClick={() => setOpen(false)}>
           Cancel

@@ -25,14 +25,15 @@ export async function createVenture(formData: FormData): Promise<ActionResult> {
   const profile = await prisma.constraintProfile.findUnique({
     where: { userId: user.id },
   });
-  if (!profile) return { ok: false, error: "Define your constraints before creating a venture." };
+  if (!profile) return { ok: false, error: "Set your constraints before you open a case." };
 
   const parsed = zCreate.safeParse({
     title: formData.get("title"),
     oneLiner: formData.get("oneLiner"),
     fitReason: formData.get("fitReason") || undefined,
   });
-  if (!parsed.success) return { ok: false, error: "Give the venture a title and a one-liner." };
+  if (!parsed.success)
+    return { ok: false, error: "A case needs a title and a one-line description." };
 
   const venture = await prisma.venture.create({
     data: {
@@ -48,7 +49,7 @@ export async function createVenture(formData: FormData): Promise<ActionResult> {
   await logDecision({
     ventureId: venture.id,
     stage: "IDEA_INTAKE",
-    decision: `Started venture: ${venture.title}`,
+    decision: `Opened case: ${venture.title}`,
     reasoning: parsed.data.fitReason ?? "Brought in by the founder.",
   });
 
@@ -67,7 +68,7 @@ export async function killVenture(ventureId: string, reason: string): Promise<Ac
   const user = await requireUser();
   const trimmed = reason.trim();
   if (trimmed.length < 8)
-    return { ok: false, error: "Write one honest sentence about why you're stopping." };
+    return { ok: false, error: "Write why you're killing this case. It stays on the record." };
 
   const v = await ownedVenture(user.id, ventureId);
   await prisma.venture.update({
@@ -77,7 +78,7 @@ export async function killVenture(ventureId: string, reason: string): Promise<Ac
   await logDecision({
     ventureId: v.id,
     stage: v.currentStage,
-    decision: "Killed the venture",
+    decision: "Killed case",
     reasoning: trimmed,
   });
   revalidatePath("/");
@@ -90,7 +91,7 @@ export async function killVenture(ventureId: string, reason: string): Promise<Ac
 export async function parkVenture(ventureId: string, reason: string): Promise<ActionResult> {
   const user = await requireUser();
   const trimmed = reason.trim();
-  if (trimmed.length < 4) return { ok: false, error: "Say why you're parking this." };
+  if (trimmed.length < 4) return { ok: false, error: "Write why you're parking this case." };
   const v = await ownedVenture(user.id, ventureId);
   await prisma.venture.update({
     where: { id: v.id },
@@ -99,7 +100,7 @@ export async function parkVenture(ventureId: string, reason: string): Promise<Ac
   await logDecision({
     ventureId: v.id,
     stage: v.currentStage,
-    decision: "Parked the venture",
+    decision: "Parked case",
     reasoning: trimmed,
   });
   revalidatePath("/");
@@ -112,12 +113,12 @@ export async function parkVenture(ventureId: string, reason: string): Promise<Ac
 export async function activateVenture(ventureId: string): Promise<ActionResult> {
   const user = await requireUser();
   const v = await ownedVenture(user.id, ventureId);
-  if (v.status === "KILLED") return { ok: false, error: "Killed ventures stay in the graveyard." };
+  if (v.status === "KILLED") return { ok: false, error: "Killed cases stay in the graveyard." };
 
   await prisma.$transaction([
     prisma.venture.updateMany({
       where: { userId: user.id, status: "ACTIVE" },
-      data: { status: "PARKED", parkReason: "Auto-parked: another venture became active." },
+      data: { status: "PARKED", parkReason: "Parked automatically when another case was reopened." },
     }),
     prisma.venture.update({ where: { id: v.id }, data: { status: "ACTIVE" } }),
   ]);
@@ -137,25 +138,25 @@ export async function advanceStage(ventureId: string): Promise<ActionResult> {
   const snapshot = buildSnapshot(v);
   const gate = evaluateGate(v.currentStage, snapshot);
   if (!gate.passed)
-    return { ok: false, error: `Gate not cleared. ${gate.remaining[0] ?? gate.requirement}` };
+    return { ok: false, error: `The gate isn't clear. ${gate.remaining[0] ?? gate.requirement}` };
 
   const next = nextStage(v.currentStage);
   if (!next) {
-    // FIRST_DOLLAR: advancing means launching.
+    // FIRST_DOLLAR: advancing means marking the case launched.
     await prisma.venture.update({ where: { id: v.id }, data: { status: "LAUNCHED" } });
     await logDecision({
       ventureId: v.id,
       stage: "FIRST_DOLLAR",
-      decision: "Marked venture LAUNCHED",
-      reasoning: "First real transaction logged.",
+      decision: "Marked case launched",
+      reasoning: "First payment logged.",
     });
   } else {
     await prisma.venture.update({ where: { id: v.id }, data: { currentStage: next } });
     await logDecision({
       ventureId: v.id,
       stage: v.currentStage,
-      decision: `Advanced to ${STAGE_META[next].label}`,
-      reasoning: `Gate cleared: ${gate.requirement}`,
+      decision: `Advanced to ${STAGE_META[next].label.toLowerCase()}`,
+      reasoning: `Gate clear — ${gate.requirement}`,
     });
   }
   revalidatePath("/");

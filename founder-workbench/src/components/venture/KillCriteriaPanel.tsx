@@ -96,17 +96,17 @@ export function KillCriteriaPanel({
                 className="self-start text-xs text-ink-faint underline hover:text-contradicts"
                 onClick={() =>
                   start(async () => {
-                    const note = window.prompt("What happened that met this criterion?") ?? "";
+                    const note = window.prompt("What met this criterion?") ?? "";
                     await triggerKillCriterion(c.id, note);
                     refresh();
                   })
                 }
               >
-                This criterion has been met
+                Mark this criterion met
               </button>
             ) : (
               <p className="text-xs" style={{ color: "var(--contradicts)" }}>
-                Triggered{c.triggeredNote ? ` — ${c.triggeredNote}` : ""}
+                Met{c.triggeredNote ? ` — ${c.triggeredNote}` : ""}
               </p>
             )}
           </li>
@@ -170,7 +170,7 @@ export function KillCriteriaPanel({
                 })
               }
             >
-              {reviewing ? "Checking…" : "Sharpen with AI"}
+              {reviewing ? "Sharpening…" : "Sharpen criteria"}
             </button>
           </div>
           {error && (

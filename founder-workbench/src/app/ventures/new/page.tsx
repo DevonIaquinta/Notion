@@ -20,10 +20,10 @@ export default async function NewVenturePage() {
   return (
     <div className="max-w-measure">
       <Eyebrow>Stage 2 · idea intake</Eyebrow>
-      <h1 className="display mt-3 text-3xl">Bring an idea, or generate a few.</h1>
+      <h1 className="display mt-3 text-3xl">Bring an idea, or draft a few.</h1>
       <p className="mt-3 text-ink-muted">
-        Whatever you start becomes your one active venture. Everything after this is
-        elimination, not more ideas.
+        Whatever you open becomes your active case. Everything after this is elimination, not
+        more ideas.
       </p>
 
       <div className="mt-8">

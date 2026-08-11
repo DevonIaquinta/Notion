@@ -188,16 +188,16 @@ textarea.field {
   opacity: 0.42;
   cursor: not-allowed;
 }
-/* The one strong affordance: a bone card that warms to brass on interaction. */
+/* Primary action: a quiet gilt hairline. The bold brass is reserved for the
+   rubric (the one imperative next action); buttons never compete with it. */
 .btn-primary {
-  background-color: var(--ink);
-  color: var(--paper);
-  border-color: var(--ink);
+  background-color: transparent;
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--rule));
 }
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--accent);
   border-color: var(--accent);
-  color: #14100a;
+  background-color: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 .btn-danger {
   color: var(--contradicts);

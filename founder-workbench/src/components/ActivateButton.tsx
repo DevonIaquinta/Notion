@@ -23,7 +23,7 @@ export function ActivateButton({ ventureId }: { ventureId: string }) {
           })
         }
       >
-        {pending ? "Activating…" : "Re-activate"}
+        {pending ? "Reopening…" : "Reopen"}
       </button>
       {error && (
         <span className="text-sm" style={{ color: "var(--contradicts)" }}>

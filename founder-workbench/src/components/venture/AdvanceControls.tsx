@@ -48,7 +48,7 @@ export function AdvanceControls({
             type="button"
             disabled={!canAdvance || pending}
             className="btn btn-primary"
-            title={canAdvance ? "" : "The gate isn't cleared yet."}
+            title={canAdvance ? "" : "The gate isn't clear yet."}
             onClick={() =>
               start(async () => {
                 setError(null);
@@ -85,8 +85,8 @@ export function AdvanceControls({
         >
           <label className="eyebrow">
             {mode === "kill"
-              ? "Why are you stopping? (one honest sentence — it's kept)"
-              : "Why park this?"}
+              ? "Why are you killing this case? It stays on the record."
+              : "Why are you parking this case?"}
           </label>
           <textarea
             className="field"
@@ -102,7 +102,7 @@ export function AdvanceControls({
               disabled={pending}
               onClick={submitReason}
             >
-              {pending ? "Saving…" : mode === "kill" ? "Move to graveyard" : "Park venture"}
+              {pending ? "Saving…" : mode === "kill" ? "Kill case" : "Park case"}
             </button>
             <button type="button" className="btn" onClick={() => setMode(null)}>
               Cancel

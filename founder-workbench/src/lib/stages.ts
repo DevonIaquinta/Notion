@@ -84,6 +84,11 @@ export interface GateResult {
 export const MIN_KILL_CRITERIA = 3;
 export const MIN_CONVERSATIONS = 5;
 
+// Count a noun correctly: 1 -> "1 criterion", 3 -> "3 criteria". No "(s)".
+function count(n: number, singular: string, plural: string): string {
+  return `${n} ${n === 1 ? singular : plural}`;
+}
+
 export function fatalAssumptions(s: VentureSnapshot) {
   return s.assumptions.filter((a) => a.riskLevel === "FATAL");
 }
@@ -101,22 +106,17 @@ export function evaluateGate(stage: VentureStage, s: VentureSnapshot): GateResul
   switch (stage) {
     case "KILL_CRITERIA": {
       const ok = s.falsifiableKillCriteriaCount >= MIN_KILL_CRITERIA;
+      const vague = s.killCriteriaCount - s.falsifiableKillCriteriaCount;
+      const short = Math.max(0, MIN_KILL_CRITERIA - s.falsifiableKillCriteriaCount);
       return {
         passed: ok,
-        requirement: `At least ${MIN_KILL_CRITERIA} kill criteria, each falsifiable.`,
-        progress: `${s.falsifiableKillCriteriaCount} of ${MIN_KILL_CRITERIA} falsifiable criteria written${
-          s.killCriteriaCount > s.falsifiableKillCriteriaCount
-            ? ` (${s.killCriteriaCount - s.falsifiableKillCriteriaCount} still vague)`
-            : ""
+        requirement: "Write 3 kill criteria, each falsifiable.",
+        progress: `${s.falsifiableKillCriteriaCount} of 3 falsifiable${
+          vague > 0 ? `, ${count(vague, "criterion still vague", "criteria still vague")}` : ""
         }.`,
         remaining: ok
           ? []
-          : [
-              `Write ${Math.max(
-                0,
-                MIN_KILL_CRITERIA - s.falsifiableKillCriteriaCount,
-              )} more falsifiable kill criterion(s).`,
-            ],
+          : [`Write ${count(short, "more falsifiable criterion", "more falsifiable criteria")}.`],
       };
     }
 
@@ -125,9 +125,9 @@ export function evaluateGate(stage: VentureStage, s: VentureSnapshot): GateResul
       const ok = fatal.length >= 1;
       return {
         passed: ok,
-        requirement: "At least one assumption identified as FATAL.",
-        progress: `${fatal.length} fatal assumption(s) of ${s.assumptions.length} total.`,
-        remaining: ok ? [] : ["Mark the assumption that kills the idea if false as FATAL."],
+        requirement: "Mark at least one assumption fatal.",
+        progress: `${count(fatal.length, "fatal assumption", "fatal assumptions")} of ${s.assumptions.length}.`,
+        remaining: ok ? [] : ["Mark the assumption that kills the idea if it's false as fatal."],
       };
     }
 
@@ -136,26 +136,28 @@ export function evaluateGate(stage: VentureStage, s: VentureSnapshot): GateResul
       const resolved = fatalResolved(s);
       const ok = enough && resolved;
       const remaining: string[] = [];
-      if (!enough)
+      if (!enough) {
+        const short = MIN_CONVERSATIONS - s.namedConversationCount;
         remaining.push(
-          `Log ${MIN_CONVERSATIONS - s.namedConversationCount} more conversation(s) with named people.`,
+          `Log ${count(short, "more conversation", "more conversations")} with named people.`,
         );
+      }
       if (!resolved) {
         const openFatal = fatalAssumptions(s).filter(
           (a) => a.status !== "SUPPORTED" && a.status !== "REFUTED",
         ).length;
         remaining.push(
           openFatal > 0
-            ? `Resolve ${openFatal} fatal assumption(s) to SUPPORTED or REFUTED.`
-            : "Identify and resolve at least one fatal assumption.",
+            ? `Resolve ${count(openFatal, "fatal assumption", "fatal assumptions")} to supported or refuted.`
+            : "Mark an assumption fatal, then resolve it.",
         );
       }
       return {
         passed: ok,
-        requirement: `${MIN_CONVERSATIONS} named conversations logged, and every FATAL assumption supported or refuted.`,
-        progress: `${s.namedConversationCount} of ${MIN_CONVERSATIONS} conversations; ${
-          resolved ? "all" : "not all"
-        } fatal assumptions resolved.`,
+        requirement: "Log 5 conversations with named people, and resolve every fatal assumption.",
+        progress: `${s.namedConversationCount} of 5 conversations logged; ${
+          resolved ? "every" : "not every"
+        } fatal assumption resolved.`,
         remaining,
       };
     }
@@ -163,12 +165,16 @@ export function evaluateGate(stage: VentureStage, s: VentureSnapshot): GateResul
     case "OFFER": {
       const ok = s.offerComplete && s.priceTestCount >= 1;
       const remaining: string[] = [];
-      if (!s.offerComplete) remaining.push("Complete every field of the offer.");
-      if (s.priceTestCount < 1) remaining.push("Log one PRICE_TEST evidence entry.");
+      if (!s.offerComplete) remaining.push("Fill in every field of the offer.");
+      if (s.priceTestCount < 1) remaining.push("Log one price test.");
       return {
         passed: ok,
-        requirement: "A complete offer and one price-test evidence entry.",
-        progress: `${s.offerComplete ? "Offer complete" : "Offer incomplete"}; ${s.priceTestCount} price test(s).`,
+        requirement: "Complete the offer, and log one price test.",
+        progress: `Offer ${s.offerComplete ? "complete" : "incomplete"}; ${count(
+          s.priceTestCount,
+          "price test",
+          "price tests",
+        )} logged.`,
         remaining,
       };
     }
@@ -177,9 +183,9 @@ export function evaluateGate(stage: VentureStage, s: VentureSnapshot): GateResul
       const ok = s.status === "LAUNCHED";
       return {
         passed: ok,
-        requirement: "Mark the venture LAUNCHED once you've taken a first real payment.",
-        progress: ok ? "Launched." : "Not yet launched.",
-        remaining: ok ? [] : ["Close a first real transaction, then mark launched."],
+        requirement: "Take a first payment, then mark the case launched.",
+        progress: ok ? "Launched." : "Not launched.",
+        remaining: ok ? [] : ["Take a first payment, then mark the case launched."],
       };
     }
   }
@@ -193,15 +199,15 @@ export function nextStage(stage: VentureStage): VentureStage | null {
 
 // The home view's single imperative sentence.
 export function nextAction(s: VentureSnapshot): string {
-  if (s.status === "LAUNCHED") return "You logged a first sale. Write the decision that got you here, or start a new venture.";
-  if (s.status === "KILLED") return "This venture is in the graveyard. Open an active one or start something new.";
-  if (s.status === "PARKED") return "This venture is parked. Re-activate it or pick another.";
+  if (s.status === "LAUNCHED")
+    return "You logged a first sale. Record what made it work, or open a new case.";
+  if (s.status === "KILLED") return "This case is closed. Open another case.";
+  if (s.status === "PARKED") return "This case is parked. Reopen it, or open another.";
 
   const gate = evaluateGate(s.currentStage, s);
   if (gate.remaining.length > 0) return gate.remaining[0];
 
   const next = nextStage(s.currentStage);
-  if (next)
-    return `Gate cleared. Advance to ${STAGE_META[next].label.toLowerCase()}.`;
-  return "Mark the venture launched.";
+  if (next) return `The gate is clear. Advance to ${STAGE_META[next].label.toLowerCase()}.`;
+  return "Take a first payment, then mark the case launched.";
 }

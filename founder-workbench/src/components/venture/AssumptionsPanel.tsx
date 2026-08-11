@@ -183,7 +183,7 @@ export function AssumptionsPanel({
               })
             }
           >
-            {proposing ? "Mapping…" : "Propose with AI"}
+            {proposing ? "Suggesting…" : "Suggest assumptions"}
           </button>
         </div>
         {error && (
@@ -202,7 +202,7 @@ export function AssumptionsPanel({
       {proposal && (
         <div className="card p-4">
           <div className="flex items-center justify-between">
-            <div className="eyebrow">Proposed map — you confirm before it's saved</div>
+            <div className="eyebrow">Suggested — you confirm before they're saved</div>
             <button
               type="button"
               className="btn"

@@ -16,10 +16,10 @@ export default async function GraveyardPage() {
     <div className="flex flex-col gap-6">
       <div>
         <Eyebrow>Graveyard</Eyebrow>
-        <h1 className="display mt-2 text-3xl">Ideas you walked away from.</h1>
+        <h1 className="display mt-2 text-3xl">Cases you closed.</h1>
         <p className="mt-2 max-w-measure text-ink-muted">
-          Killing an idea on purpose, with a reason written down, is a real decision — not a
-          failure. Kept here so the next idea starts smarter.
+          Killing a case on purpose, with a reason on the record, is a decision — not a failure.
+          Kept here so the next case starts sharper.
         </p>
       </div>
 
@@ -27,7 +27,7 @@ export default async function GraveyardPage() {
 
       {kills.length === 0 ? (
         <p className="py-10 text-center text-sm text-ink-faint">
-          Nothing here yet. When you kill a venture, it comes to rest here with the reason you gave.
+          Nothing here yet. When you kill a case, it comes to rest here with the reason you gave.
         </p>
       ) : (
         <ul className="flex flex-col gap-3">

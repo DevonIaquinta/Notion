@@ -36,7 +36,7 @@ export async function addKillCriterion(
 ): Promise<ActionResult> {
   const user = await requireUser();
   const parsed = zAdd.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Write a criterion of at least a few words." };
+  if (!parsed.success) return { ok: false, error: "Write a criterion — a few words at least." };
   const v = await ownedVentureId(user.id, ventureId);
 
   await prisma.killCriterion.create({
@@ -95,8 +95,8 @@ export async function triggerKillCriterion(
   await logDecision({
     ventureId: k.venture.id,
     stage: k.venture.currentStage,
-    decision: `Kill criterion triggered: "${k.statement}"`,
-    reasoning: trimmed || "Marked as met.",
+    decision: `Kill criterion met: "${k.statement}"`,
+    reasoning: trimmed || "Marked met.",
   });
   revalidatePath(`/ventures/${k.venture.id}`);
   return { ok: true };
@@ -107,7 +107,7 @@ export async function deleteKillCriterion(criterionId: string): Promise<ActionRe
   const k = await assertOwnsCriterion(user.id, criterionId);
   // Editable only before research begins.
   if (k.venture.currentStage !== "KILL_CRITERIA")
-    return { ok: false, error: "Kill criteria lock once research begins." };
+    return { ok: false, error: "Kill criteria lock once you start research." };
   await prisma.killCriterion.delete({ where: { id: k.id } });
   revalidatePath(`/ventures/${k.venture.id}`);
   return { ok: true };
