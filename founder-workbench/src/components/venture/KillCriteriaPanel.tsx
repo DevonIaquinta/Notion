@@ -170,7 +170,7 @@ export function KillCriteriaPanel({
                 })
               }
             >
-              {reviewing ? "Sharpening…" : "Sharpen criteria"}
+              {reviewing ? "Checking…" : "Check criteria"}
             </button>
           </div>
           {error && (

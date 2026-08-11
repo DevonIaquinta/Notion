@@ -200,7 +200,7 @@ export function nextStage(stage: VentureStage): VentureStage | null {
 // The home view's single imperative sentence.
 export function nextAction(s: VentureSnapshot): string {
   if (s.status === "LAUNCHED")
-    return "You logged a first sale. Record what made it work, or open a new case.";
+    return "You took a first payment. Record what made it work, or open a new case.";
   if (s.status === "KILLED") return "This case is closed. Open another case.";
   if (s.status === "PARKED") return "This case is parked. Reopen it, or open another.";
 

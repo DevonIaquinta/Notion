@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    // Committed dark: the study after midnight. Print forces paper white.
+    // Committed dark: a private counsel's study. Print forces paper white.
     <html
       lang="en"
       data-theme="dark"
