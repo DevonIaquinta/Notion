@@ -52,7 +52,7 @@ export default async function Home() {
           <div className="eyebrow" style={{ color: "var(--accent)" }}>
             Your next action
           </div>
-          <p className="display mt-1 text-xl leading-snug">{action}</p>
+          <p className="rubric mt-1 text-xl">{action}</p>
           <p className="mt-2 text-sm text-ink-muted">
             {STAGE_META[stage].label}: {gate.progress}
           </p>

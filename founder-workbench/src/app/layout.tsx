@@ -1,6 +1,24 @@
 import type { Metadata } from "next";
+import { Newsreader, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Masthead } from "@/components/Masthead";
+
+// The serif of record + the mono of data. Loaded self-hosted by next/font so
+// there is no external request at runtime.
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Founder Workbench",
@@ -10,10 +28,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    // Committed dark: the study after midnight. Print forces paper white.
+    <html
+      lang="en"
+      data-theme="dark"
+      className={`${newsreader.variable} ${plexMono.variable}`}
+      suppressHydrationWarning
+    >
       <body>
         <Masthead />
-        <main className="mx-auto max-w-case px-5 py-8">{children}</main>
+        <main className="mx-auto max-w-case px-5 py-10">{children}</main>
       </body>
     </html>
   );

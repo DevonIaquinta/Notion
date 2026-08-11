@@ -104,7 +104,7 @@ export default async function VentureCaseFile({ params }: { params: { id: string
             <div className="eyebrow" style={{ color: "var(--accent)" }}>
               Next action
             </div>
-            <p className="display mt-1 text-xl leading-snug">{action}</p>
+            <p className="rubric mt-1 text-xl">{action}</p>
           </div>
         )}
 
