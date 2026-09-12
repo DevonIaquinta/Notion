@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Sunless Vault</title>
+<style>
+  :root {
+    --void:      #101526;
+    --stone:     #1b2237;
+    --stone-lit: #7d8cb5;
+    --stone-dim: #313c5c;
+    --floor-lit: #4a5878;
+    --floor-dim: #232b43;
+    --parchment: #ece3cf;
+    --muted:     #8593b8;
+    --blood:     #d1495b;
+    --gold:      #e0b33f;
+    --verdant:   #6ba368;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--void);
+    color: var(--parchment);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 48px;
+    gap: 18px;
+  }
+
+  header {
+    width: 100%;
+    max-width: 1180px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid var(--stone-dim);
+    padding-bottom: 10px;
+  }
+
+  h1 {
+    font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    font-weight: 400;
+    font-size: 30px;
+    letter-spacing: 0.01em;
+    margin: 0;
+    color: var(--parchment);
+  }
+
+  .depth-readout {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .depth-readout b { color: var(--gold); font-weight: 600; }
+
+  main {
+    width: 100%;
+    max-width: 1180px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  .stage { flex: 1 1 auto; min-width: 0; }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--void);
+    border: 1px solid var(--stone-dim);
+    image-rendering: auto;
+  }
+  canvas:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  #log {
+    margin-top: 12px;
+    height: 116px;
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1.55;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  #log div { opacity: 0.55; }
+  #log div:last-child { opacity: 1; }
+
+  aside {
+    flex: 0 0 250px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  aside section { margin-bottom: 20px; }
+
+  aside h2 {
+    font-family: Georgia, serif;
+    font-weight: 400;
+    font-size: 15px;
+    margin: 0 0 6px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--stone);
+    padding-bottom: 4px;
+  }
+
+  .bar {
+    height: 14px;
+    background: var(--stone);
+    position: relative;
+    margin: 4px 0 8px;
+  }
+  .bar span {
+    position: absolute;
+    inset: 0 auto 0 0;
+    transition: width .18s ease;
+  }
+  .bar em {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-style: normal;
+    font-size: 11px;
+    color: var(--parchment);
+  }
+  .hp span { background: var(--blood); }
+  .xp span { background: #4f7cac; }
+
+  .stat-row { display: flex; justify-content: space-between; }
+  .stat-row span:last-child { color: var(--parchment); }
+  .stat-row span:first-child { color: var(--muted); }
+
+  #inventory div { display: flex; justify-content: space-between; }
+  #inventory .key { color: var(--gold); }
+  .empty { color: var(--stone-lit); font-style: italic; }
+
+  .keys { color: var(--muted); font-size: 12px; line-height: 1.7; }
+  .keys b { color: var(--parchment); font-weight: 600; }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(16, 21, 38, 0.93);
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 24px;
+    z-index: 10;
+  }
+  .overlay[hidden] { display: none; }
+  .overlay h2 {
+    font-family: Georgia, serif;
+    font-weight: 400;
+    font-size: 42px;
+    margin: 0 0 12px;
+  }
+  .overlay p { color: var(--muted); margin: 0 0 24px; max-width: 46ch; line-height: 1.7; }
+  .overlay button {
+    font: inherit;
+    font-size: 14px;
+    padding: 10px 22px;
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    cursor: pointer;
+  }
+  .overlay button:hover { background: var(--gold); color: var(--void); }
+
+  @media (max-width: 860px) {
+    main { flex-direction: column; }
+    aside { flex: 1 1 auto; width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bar span { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>The Sunless Vault</h1>
+  <div class="depth-readout">Depth <b id="depth">1</b> of 10</div>
+</header>
+
+<main>
+  <div class="stage">
+    <canvas id="screen" tabindex="0" width="1020" height="660"
+            aria-label="Dungeon map. Use arrow keys to move."></canvas>
+    <div id="log"></div>
+  </div>
+
+  <aside>
+    <section>
+      <h2>Vitals</h2>
+      <div class="bar hp"><span id="hpbar"></span><em id="hptext"></em></div>
+      <div class="bar xp"><span id="xpbar"></span><em id="xptext"></em></div>
+      <div class="stat-row"><span>Level</span><span id="plevel">1</span></div>
+      <div class="stat-row"><span>Attack</span><span id="ppower">4</span></div>
+      <div class="stat-row"><span>Defence</span><span id="pdef">1</span></div>
+      <div class="stat-row"><span>Gold</span><span id="pgold">0</span></div>
+    </section>
+
+    <section>
+      <h2>Carried</h2>
+      <div id="equipment"></div>
+      <div id="inventory"></div>
+    </section>
+
+    <section>
+      <h2>Controls</h2>
+      <div class="keys">
+        <b>Arrows</b> or <b>hjkl</b> move<br>
+        <b>yubn</b> move diagonally<br>
+        <b>.</b> wait a turn<br>
+        <b>g</b> pick up what you stand on<br>
+        <b>1–9</b> use an item<br>
+        <b>&gt;</b> take the stairs down
+      </div>
+    </section>
+  </aside>
+</main>
+
+<div class="overlay" id="overlay" hidden>
+  <div>
+    <h2 id="ov-title"></h2>
+    <p id="ov-body"></p>
+    <button id="ov-btn">Descend again</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ---------------------------------------------------------------
+   Grid + rendering constants
+   --------------------------------------------------------------- */
+const W = 60, H = 33;              // map size in tiles
+const CW = 17, CH = 20;            // cell size in pixels
+const FOV_RADIUS = 8;
+const MAX_DEPTH = 10;
+
+const canvas = document.getElementById("screen");
+canvas.width = W * CW;
+canvas.height = H * CH;
+const ctx = canvas.getContext("2d");
+
+const COLOR = {
+  wallLit:  "#7d8cb5",
+  wallDim:  "#313c5c",
+  floorLit: "#4a5878",
+  floorDim: "#232b43",
+  player:   "#ece3cf",
+  stairs:   "#e0b33f",
+  bg:       "#101526"
+};
+
+/* ---------------------------------------------------------------
+   Small utilities
+   --------------------------------------------------------------- */
+const randInt = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+const choice  = arr => arr[Math.floor(Math.random() * arr.length)];
+
+function weighted(table, depth) {
+  // table: [{ name, weight, minDepth }]
+  const pool = table.filter(e => depth >= e.minDepth);
+  let total = pool.reduce((s, e) => s + e.weight(depth), 0);
+  let roll = Math.random() * total;
+  for (const e of pool) {
+    roll -= e.weight(depth);
+    if (roll <= 0) return e;
+  }
+  return pool[pool.length - 1];
+}
+
+/* ---------------------------------------------------------------
+   Game state
+   --------------------------------------------------------------- */
+let tiles, visible, explored, entities, items, player, depth, stairs, log, gameOver;
+
+function blankGrid(fill) {
+  return Array.from({ length: H }, () => Array(W).fill(fill));
+}
+
+/* ---------------------------------------------------------------
+   Map generation — rooms joined by L-corridors, plus loop edges
+   --------------------------------------------------------------- */
+function makeRoom(x, y, w, h) {
+  return {
+    x, y, w, h,
+    cx: Math.floor(x + w / 2),
+    cy: Math.floor(y + h / 2),
+    intersects(o) {
+      return x <= o.x + o.w + 1 && x + w + 1 >= o.x &&
+             y <= o.y + o.h + 1 && y + h + 1 >= o.y;
+    }
+  };
+}
+
+function carveRoom(r) {
+  for (let y = r.y; y < r.y + r.h; y++)
+    for (let x = r.x; x < r.x + r.w; x++)
+      tiles[y][x] = ".";
+}
+
+function carveH(x1, x2, y) {
+  for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) tiles[y][x] = ".";
+}
+function carveV(y1, y2, x) {
+  for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) tiles[y][x] = ".";
+}
+function connect(a, b) {
+  if (Math.random() < 0.5) { carveH(a.cx, b.cx, a.cy); carveV(a.cy, b.cy, b.cx); }
+  else                     { carveV(a.cy, b.cy, a.cx); carveH(a.cx, b.cx, b.cy); }
+}
+
+function generateMap() {
+  tiles    = blankGrid("#");
+  visible  = blankGrid(false);
+  explored = blankGrid(false);
+  entities = [];
+  items    = [];
+
+  const rooms = [];
+  const attempts = 200;
+  const maxRooms = 14;
+
+  for (let i = 0; i < attempts && rooms.length < maxRooms; i++) {
+    const w = randInt(6, 13);
+    const h = randInt(4, 8);
+    const x = randInt(1, W - w - 2);
+    const y = randInt(1, H - h - 2);
+    const room = makeRoom(x, y, w, h);
+    if (rooms.some(r => room.intersects(r))) continue;
+    carveRoom(room);
+    if (rooms.length > 0) connect(rooms[rooms.length - 1], room);
+    rooms.push(room);
+  }
+
+  // A few extra connections so the level has loops, not just a tree.
+  for (let i = 0; i < 3 && rooms.length > 3; i++) {
+    connect(choice(rooms), choice(rooms));
+  }
+
+  // Player starts in the first room; stairs sit in the farthest one.
+  player.x = rooms[0].cx;
+  player.y = rooms[0].cy;
+
+  let far = rooms[1] || rooms[0], best = -1;
+  for (const r of rooms.slice(1)) {
+    const d = Math.abs(r.cx - player.x) + Math.abs(r.cy - player.y);
+    if (d > best) { best = d; far = r; }
+  }
+  stairs = { x: far.cx, y: far.cy };
+
+  // Populate every room but the one the player wakes up in.
+  for (const r of rooms.slice(1)) {
+    const monsterCount = randInt(0, 2 + Math.floor(depth / 2));
+    for (let i = 0; i < monsterCount; i++) spawnMonster(r);
+
+    const itemCount = randInt(0, 2);
+    for (let i = 0; i < itemCount; i++) spawnItem(r);
+  }
+
+  if (depth === MAX_DEPTH) {
+    items.push({ x: stairs.x, y: stairs.y, kind: "amulet",
+                 name: "Amulet of the Vault", glyph: "*", color: "#e6d6ff" });
+  }
+}
+
+function freeSpot(room) {
+  for (let tries = 0; tries < 40; tries++) {
+    const x = randInt(room.x, room.x + room.w - 1);
+    const y = randInt(room.y, room.y + room.h - 1);
+    if (tiles[y][x] !== ".") continue;
+    if (x === player.x && y === player.y) continue;
+    if (entityAt(x, y)) continue;
+    return { x, y };
+  }
+  return null;
+}
+
+/* ---------------------------------------------------------------
+   Monsters
+   --------------------------------------------------------------- */
+const BESTIARY = [
+  { name: "giant rat",  glyph: "r", color: "#8fae7a", hp: 5,  power: 3,  def: 0, xp: 4,   minDepth: 1, weight: d => 10 - d },
+  { name: "goblin",     glyph: "g", color: "#6ba368", hp: 9,  power: 4,  def: 0, xp: 8,   minDepth: 1, weight: d => 8 },
+  { name: "skeleton",   glyph: "s", color: "#cfd4e2", hp: 13, power: 5,  def: 1, xp: 14,  minDepth: 2, weight: d => 6 },
+  { name: "orc",        glyph: "o", color: "#c07b3d", hp: 18, power: 6,  def: 1, xp: 24,  minDepth: 3, weight: d => 7 },
+  { name: "wraith",     glyph: "W", color: "#9b8fd4", hp: 16, power: 8,  def: 2, xp: 36,  minDepth: 5, weight: d => 5 },
+  { name: "cave troll", glyph: "T", color: "#7d9a4f", hp: 32, power: 9,  def: 3, xp: 60,  minDepth: 6, weight: d => 5 },
+  { name: "dread wyrm", glyph: "D", color: "#d1495b", hp: 48, power: 10, def: 4, xp: 140, minDepth: 8, weight: d => 4 }
+];
+
+function spawnMonster(room) {
+  const spot = freeSpot(room);
+  if (!spot) return;
+  const t = weighted(BESTIARY, depth);
+  const hpScale  = 1 + (depth - 1) * 0.14;   // monsters get much tougher
+  const powScale = 1 + (depth - 1) * 0.04;   // but hit only a little harder
+  entities.push({
+    x: spot.x, y: spot.y,
+    name: t.name, glyph: t.glyph, color: t.color,
+    hp: Math.round(t.hp * hpScale), maxHp: Math.round(t.hp * hpScale),
+    power: Math.round(t.power * powScale), def: t.def + Math.floor((depth - 1) / 5),
+    xp: t.xp, confused: 0
+  });
+}
+
+/* ---------------------------------------------------------------
+   Items
+   --------------------------------------------------------------- */
+const LOOT = [
+  { kind: "potion",    name: "healing potion",     glyph: "!", color: "#d1495b", minDepth: 1, weight: d => 12 },
+  { kind: "lightning", name: "scroll of lightning",glyph: "?", color: "#8fd4e2", minDepth: 2, weight: d => 6 },
+  { kind: "fireball",  name: "scroll of fireball", glyph: "?", color: "#e08b3d", minDepth: 3, weight: d => 5 },
+  { kind: "confuse",   name: "scroll of confusion",glyph: "?", color: "#b98fd4", minDepth: 2, weight: d => 5 },
+  { kind: "gold",      name: "gold",               glyph: "$", color: "#e0b33f", minDepth: 1, weight: d => 9 },
+  { kind: "weapon",    name: "weapon",             glyph: ")", color: "#cfd4e2", minDepth: 1, weight: d => 5 },
+  { kind: "armour",    name: "armour",             glyph: "[", color: "#a8b0c8", minDepth: 1, weight: d => 5 }
+];
+
+const WEAPONS = [
+  { name: "rusted dagger", bonus: 1 }, { name: "short sword", bonus: 3 },
+  { name: "war axe", bonus: 5 },       { name: "rune blade", bonus: 8 }
+];
+const ARMOURS = [
+  { name: "padded jerkin", bonus: 1 }, { name: "chain hauberk", bonus: 3 },
+  { name: "scaled plate", bonus: 5 },  { name: "vault-forged mail", bonus: 7 }
+];
+
+function spawnItem(room) {
+  const spot = freeSpot(room);
+  if (!spot) return;
+  const t = weighted(LOOT, depth);
+  const item = { x: spot.x, y: spot.y, kind: t.kind, name: t.name,
+                 glyph: t.glyph, color: t.color };
+
+  if (t.kind === "gold") {
+    item.amount = randInt(5, 15) * depth;
+    item.name = item.amount + " gold";
+  }
+  if (t.kind === "weapon") {
+    const tier = Math.min(WEAPONS.length - 1, Math.floor((depth - 1) / 3) + randInt(0, 1));
+    item.bonus = WEAPONS[tier].bonus;
+    item.name  = WEAPONS[tier].name;
+  }
+  if (t.kind === "armour") {
+    const tier = Math.min(ARMOURS.length - 1, Math.floor((depth - 1) / 3) + randInt(0, 1));
+    item.bonus = ARMOURS[tier].bonus;
+    item.name  = ARMOURS[tier].name;
+  }
+  items.push(item);
+}
+
+/* ---------------------------------------------------------------
+   Field of view — recursive shadowcasting across eight octants
+   --------------------------------------------------------------- */
+const OCTANTS = [
+  [ 1, 0, 0, 1], [ 0, 1, 1, 0], [ 0,-1, 1, 0], [-1, 0, 0, 1],
+  [-1, 0, 0,-1], [ 0,-1,-1, 0], [ 0, 1,-1, 0], [ 1, 0, 0,-1]
+];
+
+const opaque = (x, y) => x < 0 || y < 0 || x >= W || y >= H || tiles[y][x] === "#";
+
+function castLight(cx, cy, row, start, end, radius, xx, xy, yx, yy) {
+  if (start < end) return;
+  let newStart = 0;
+
+  for (let i = row; i <= radius; i++) {
+    let blocked = false;
+    for (let dx = -i, dy = -i; dx <= 0; dx++) {
+      const lSlope = (dx - 0.5) / (dy + 0.5);
+      const rSlope = (dx + 0.5) / (dy - 0.5);
+      if (start < rSlope) continue;
+      if (end > lSlope) break;
+
+      const X = cx + dx * xx + dy * xy;
+      const Y = cy + dx * yx + dy * yy;
+      if (X < 0 || Y < 0 || X >= W || Y >= H) continue;
+
+      if (dx * dx + dy * dy <= radius * radius) {
+        visible[Y][X] = true;
+        explored[Y][X] = true;
+      }
+
+      if (blocked) {
+        if (opaque(X, Y)) { newStart = rSlope; continue; }
+        blocked = false;
+        start = newStart;
+      } else if (opaque(X, Y) && i < radius) {
+        blocked = true;
+        castLight(cx, cy, i + 1, start, lSlope, radius, xx, xy, yx, yy);
+        newStart = rSlope;
+      }
+    }
+    if (blocked) break;
+  }
+}
+
+function computeFOV() {
+  for (let y = 0; y < H; y++) visible[y].fill(false);
+  visible[player.y][player.x] = true;
+  explored[player.y][player.x] = true;
+  for (const [xx, xy, yx, yy] of OCTANTS)
+    castLight(player.x, player.y, 1, 1.0, 0.0, FOV_RADIUS, xx, xy, yx, yy);
+}
+
+/* ---------------------------------------------------------------
+   Queries
+   --------------------------------------------------------------- */
+const entityAt = (x, y) => entities.find(e => e.x === x && e.y === y);
+const itemAt   = (x, y) => items.find(i => i.x === x && i.y === y);
+const walkable = (x, y) => x >= 0 && y >= 0 && x < W && y < H && tiles[y][x] === ".";
+
+function attackPower() { return player.power + (player.weapon ? player.weapon.bonus : 0); }
+function defence()     { return player.def   + (player.armour ? player.armour.bonus : 0); }
+
+/* ---------------------------------------------------------------
+   Messages
+   --------------------------------------------------------------- */
+function say(text, color) {
+  log.push({ text, color: color || "#ece3cf" });
+  if (log.length > 6) log.shift();
+  const el = document.getElementById("log");
+  el.innerHTML = "";
+  for (const m of log) {
+    const d = document.createElement("div");
+    d.textContent = m.text;
+    d.style.color = m.color;
+    el.appendChild(d);
+  }
+}
+
+/* ---------------------------------------------------------------
+   Combat
+   --------------------------------------------------------------- */
+function damageRoll(power, def) {
+  const raw = randInt(Math.ceil(power * 0.6), power);
+  return Math.max(1, raw - def);
+}
+
+function playerAttack(target) {
+  const dmg = damageRoll(attackPower(), target.def);
+  target.hp -= dmg;
+  if (target.hp <= 0) {
+    say(`You cut down the ${target.name}.`, "#6ba368");
+    entities.splice(entities.indexOf(target), 1);
+    gainXP(target.xp);
+  } else {
+    say(`You hit the ${target.name} for ${dmg}.`);
+  }
+}
+
+function monsterAttack(m) {
+  const dmg = damageRoll(m.power, defence());
+  player.hp -= dmg;
+  say(`The ${m.name} hits you for ${dmg}.`, "#d1495b");
+  if (player.hp <= 0) die();
+}
+
+function gainXP(amount) {
+  player.xp += amount;
+  while (player.xp >= player.xpNext) {
+    player.xp -= player.xpNext;
+    player.level++;
+    player.xpNext = Math.round(player.xpNext * 1.8);
+    player.maxHp += 6;
+    player.hp = Math.min(player.maxHp, player.hp + 10);
+    player.power += 1;
+    if (player.level % 2 === 0) player.def += 1;
+    say(`You reach level ${player.level}. You feel stronger.`, "#e0b33f");
+  }
+}
+
+/* ---------------------------------------------------------------
+   Monster turns
+   --------------------------------------------------------------- */
+function monsterTurn() {
+  for (const m of [...entities]) {
+    if (m.hp <= 0) continue;
+
+    if (m.confused > 0) {
+      m.confused--;
+      const dx = randInt(-1, 1), dy = randInt(-1, 1);
+      if (walkable(m.x + dx, m.y + dy) && !entityAt(m.x + dx, m.y + dy) &&
+          !(m.x + dx === player.x && m.y + dy === player.y)) {
+        m.x += dx; m.y += dy;
+      }
+      continue;
+    }
+
+    if (!visible[m.y][m.x]) continue;   // can't see you, doesn't act
+
+    const dist = Math.max(Math.abs(m.x - player.x), Math.abs(m.y - player.y));
+    if (dist === 1) { monsterAttack(m); continue; }
+
+    // Greedy step toward the player, sliding along walls when blocked.
+    const sx = Math.sign(player.x - m.x);
+    const sy = Math.sign(player.y - m.y);
+    const options = [[sx, sy], [sx, 0], [0, sy]];
+    for (const [dx, dy] of options) {
+      if (dx === 0 && dy === 0) continue;
+      const nx = m.x + dx, ny = m.y + dy;
+      if (walkable(nx, ny) && !entityAt(nx, ny) &&
+          !(nx === player.x && ny === player.y)) {
+        m.x = nx; m.y = ny;
+        break;
+      }
+    }
+  }
+}
+
+/* ---------------------------------------------------------------
+   Player actions
+   --------------------------------------------------------------- */
+function tryMove(dx, dy) {
+  const nx = player.x + dx, ny = player.y + dy;
+  const target = entityAt(nx, ny);
+
+  if (target) { playerAttack(target); return true; }
+  if (!walkable(nx, ny)) return false;
+
+  player.x = nx; player.y = ny;
+
+  const it = itemAt(nx, ny);
+  if (it) say(`You see ${it.name} here.`, "#8593b8");
+  return true;
+}
+
+function pickUp() {
+  const it = itemAt(player.x, player.y);
+  if (!it) { say("There is nothing here to take.", "#8593b8"); return false; }
+
+  items.splice(items.indexOf(it), 1);
+
+  if (it.kind === "gold") {
+    player.gold += it.amount;
+    say(`You pocket ${it.amount} gold.`, "#e0b33f");
+  } else if (it.kind === "amulet") {
+    win();
+    return true;
+  } else if (it.kind === "weapon") {
+    const cur = player.weapon ? player.weapon.bonus : 0;
+    if (it.bonus > cur) { player.weapon = it; say(`You wield the ${it.name}.`, "#e0b33f"); }
+    else say(`The ${it.name} is worse than what you carry. You leave it.`, "#8593b8");
+  } else if (it.kind === "armour") {
+    const cur = player.armour ? player.armour.bonus : 0;
+    if (it.bonus > cur) { player.armour = it; say(`You strap on the ${it.name}.`, "#e0b33f"); }
+    else say(`The ${it.name} is worse than what you wear. You leave it.`, "#8593b8");
+  } else {
+    if (player.pack.length >= 9) { say("You can carry no more.", "#8593b8"); items.push(it); return false; }
+    player.pack.push(it);
+    say(`You take the ${it.name}.`);
+  }
+  return true;
+}
+
+function nearestVisible() {
+  let best = null, bestD = Infinity;
+  for (const m of entities) {
+    if (!visible[m.y][m.x]) continue;
+    const d = Math.hypot(m.x - player.x, m.y - player.y);
+    if (d < bestD) { bestD = d; best = m; }
+  }
+  return best;
+}
+
+function killMonster(m, verb, color) {
+  say(`The ${m.name} ${verb}`, color);
+  entities.splice(entities.indexOf(m), 1);
+  gainXP(m.xp);
+}
+
+function useItem(index) {
+  const it = player.pack[index];
+  if (!it) return false;
+
+  if (it.kind === "potion") {
+    if (player.hp >= player.maxHp) { say("You are already whole.", "#8593b8"); return false; }
+    const healed = Math.min(Math.max(25, Math.round(player.maxHp * 0.4)),
+                            player.maxHp - player.hp);
+    player.hp += healed;
+    say(`The potion knits your wounds. +${healed} health.`, "#6ba368");
+  }
+
+  else if (it.kind === "lightning") {
+    const t = nearestVisible();
+    if (!t) { say("The scroll finds no target.", "#8593b8"); return false; }
+    const dmg = 22;
+    t.hp -= dmg;
+    say(`Lightning arcs into the ${t.name} for ${dmg}.`, "#8fd4e2");
+    if (t.hp <= 0) killMonster(t, "is scorched to ash.", "#8fd4e2");
+  }
+
+  else if (it.kind === "fireball") {
+    const t = nearestVisible();
+    if (!t) { say("The scroll finds no target.", "#8593b8"); return false; }
+    const cx = t.x, cy = t.y, radius = 3, dmg = 16;
+    say("The scroll erupts in a wave of flame.", "#e08b3d");
+    for (const m of [...entities]) {
+      if (Math.hypot(m.x - cx, m.y - cy) <= radius) {
+        m.hp -= dmg;
+        if (m.hp <= 0) killMonster(m, "burns away.", "#e08b3d");
+      }
+    }
+    if (Math.hypot(player.x - cx, player.y - cy) <= radius) {
+      player.hp -= 8;
+      say("The blast singes you for 8.", "#d1495b");
+      if (player.hp <= 0) { die(); return true; }
+    }
+  }
+
+  else if (it.kind === "confuse") {
+    const t = nearestVisible();
+    if (!t) { say("The scroll finds no target.", "#8593b8"); return false; }
+    t.confused = 8;
+    say(`The ${t.name} staggers, its eyes unfocused.`, "#b98fd4");
+  }
+
+  player.pack.splice(index, 1);
+  return true;
+}
+
+function descend() {
+  if (player.x !== stairs.x || player.y !== stairs.y) {
+    say("There are no stairs here.", "#8593b8");
+    return false;
+  }
+  depth++;
+  generateMap();
+  player.hp = Math.min(player.maxHp, player.hp + Math.floor(player.maxHp * 0.15));
+  say(`You climb down to depth ${depth}. The air turns colder.`, "#e0b33f");
+  return false; // descending is free
+}
+
+/* ---------------------------------------------------------------
+   Endings
+   --------------------------------------------------------------- */
+function showOverlay(title, body, btn) {
+  document.getElementById("ov-title").textContent = title;
+  document.getElementById("ov-body").textContent = body;
+  document.getElementById("ov-btn").textContent = btn;
+  document.getElementById("overlay").hidden = false;
+}
+
+function die() {
+  gameOver = true;
+  draw();
+  showOverlay("You die.",
+    `You fell on depth ${depth} at level ${player.level}, carrying ${player.gold} gold. The vault keeps what it takes.`,
+    "Try again");
+}
+
+function win() {
+  gameOver = true;
+  draw();
+  showOverlay("You escape.",
+    `You lift the Amulet of the Vault and the dark lets go of you. Level ${player.level}, ${player.gold} gold, ten floors behind you.`,
+    "Play again");
+}
+
+/* ---------------------------------------------------------------
+   Rendering
+   --------------------------------------------------------------- */
+function draw() {
+  ctx.fillStyle = COLOR.bg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.font = `${CH - 4}px ui-monospace, Menlo, Consolas, monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  const put = (glyph, x, y, color) => {
+    ctx.fillStyle = color;
+    ctx.fillText(glyph, x * CW + CW / 2, y * CH + CH / 2);
+  };
+
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (!explored[y][x]) continue;
+      const lit = visible[y][x];
+      if (tiles[y][x] === "#") put("#", x, y, lit ? COLOR.wallLit : COLOR.wallDim);
+      else                     put("·", x, y, lit ? COLOR.floorLit : COLOR.floorDim);
+    }
+  }
+
+  if (explored[stairs.y][stairs.x]) {
+    put(">", stairs.x, stairs.y, visible[stairs.y][stairs.x] ? COLOR.stairs : "#6b5a24");
+  }
+
+  for (const it of items)
+    if (visible[it.y][it.x]) put(it.glyph, it.x, it.y, it.color);
+
+  for (const m of entities)
+    if (visible[m.y][m.x]) put(m.glyph, m.x, m.y, m.color);
+
+  put("@", player.x, player.y, COLOR.player);
+  updatePanel();
+}
+
+function updatePanel() {
+  document.getElementById("depth").textContent = depth;
+  document.getElementById("plevel").textContent = player.level;
+  document.getElementById("ppower").textContent = attackPower();
+  document.getElementById("pdef").textContent = defence();
+  document.getElementById("pgold").textContent = player.gold;
+
+  const hpPct = Math.max(0, player.hp) / player.maxHp * 100;
+  document.getElementById("hpbar").style.width = hpPct + "%";
+  document.getElementById("hptext").textContent =
+    `${Math.max(0, player.hp)} / ${player.maxHp}`;
+
+  document.getElementById("xpbar").style.width = (player.xp / player.xpNext * 100) + "%";
+  document.getElementById("xptext").textContent = `${player.xp} / ${player.xpNext} xp`;
+
+  const eq = document.getElementById("equipment");
+  eq.innerHTML = "";
+  const line = (label, val) => {
+    const d = document.createElement("div");
+    d.className = "stat-row";
+    d.innerHTML = `<span>${label}</span><span>${val}</span>`;
+    eq.appendChild(d);
+  };
+  line("Weapon", player.weapon ? player.weapon.name : "bare hands");
+  line("Armour", player.armour ? player.armour.name : "rags");
+
+  const inv = document.getElementById("inventory");
+  inv.innerHTML = "";
+  if (player.pack.length === 0) {
+    inv.innerHTML = '<div class="empty" style="margin-top:6px">pack empty</div>';
+  } else {
+    player.pack.forEach((it, i) => {
+      const d = document.createElement("div");
+      d.innerHTML = `<span class="key">${i + 1}</span><span>${it.name}</span>`;
+      inv.appendChild(d);
+    });
+  }
+}
+
+/* ---------------------------------------------------------------
+   Input
+   --------------------------------------------------------------- */
+const MOVES = {
+  ArrowUp: [0,-1], ArrowDown: [0,1], ArrowLeft: [-1,0], ArrowRight: [1,0],
+  k: [0,-1], j: [0,1], h: [-1,0], l: [1,0],
+  y: [-1,-1], u: [1,-1], b: [-1,1], n: [1,1]
+};
+
+window.addEventListener("keydown", e => {
+  if (gameOver) return;
+  if (e.key === " " || e.key.startsWith("Arrow")) e.preventDefault();
+
+  let tookTurn = false;
+
+  if (MOVES[e.key]) {
+    tookTurn = tryMove(MOVES[e.key][0], MOVES[e.key][1]);
+  } else if (e.key === "." || e.key === "5") {
+    tookTurn = true;
+    say("You wait.", "#8593b8");
+  } else if (e.key === "g") {
+    tookTurn = pickUp();
+  } else if (e.key === ">") {
+    tookTurn = descend();
+  } else if (/^[1-9]$/.test(e.key)) {
+    tookTurn = useItem(parseInt(e.key, 10) - 1);
+  } else {
+    return;
+  }
+
+  if (gameOver) return;
+  computeFOV();
+  if (tookTurn) monsterTurn();
+  if (!gameOver) { computeFOV(); draw(); }
+});
+
+/* ---------------------------------------------------------------
+   Boot
+   --------------------------------------------------------------- */
+function newGame() {
+  depth = 1;
+  gameOver = false;
+  log = [];
+  player = {
+    x: 0, y: 0, hp: 40, maxHp: 40, power: 4, def: 1,
+    level: 1, xp: 0, xpNext: 20, gold: 0,
+    weapon: null, armour: null, pack: []
+  };
+  generateMap();
+  computeFOV();
+  document.getElementById("overlay").hidden = true;
+  say("You wake on cold stone. Something scrapes in the dark below.", "#8593b8");
+  draw();
+  canvas.focus();
+}
+
+document.getElementById("ov-btn").addEventListener("click", newGame);
+newGame();
+</script>
+</body>
+</html>
