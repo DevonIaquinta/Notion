@@ -415,7 +415,8 @@ function spawnMonster(room) {
     name: t.name, glyph: t.glyph, color: t.color,
     hp: Math.round(t.hp * hpScale), maxHp: Math.round(t.hp * hpScale),
     power: Math.round(t.power * powScale), def: t.def + Math.floor((depth - 1) / 5),
-    xp: t.xp, confused: 0
+    xp: t.xp, confused: 0,
+    path: null, pathGoalX: -1, pathGoalY: -1   // A* path cache
   });
 }
 
@@ -586,6 +587,144 @@ function gainXP(amount) {
 }
 
 /* ---------------------------------------------------------------
+   Monster pathfinding — A* on the walkable grid
+
+   Orthogonal (4-direction) A* with a Manhattan heuristic. Returns the
+   list of steps from the tile after the start up to and including the
+   goal, or null if no path is found within the node budget. Scratch
+   arrays are module-level and reused across searches via a generation
+   stamp, so a search costs no allocation and at most one full-grid
+   sweep. The goal tile (the player) is always treated as reachable even
+   though it is occupied; movement never actually lands on it because the
+   adjacency branch of monsterTurn attacks first.
+   --------------------------------------------------------------- */
+const ASTAR_MAX_NODES = W * H;          // cap: at most one full-grid sweep
+const _N      = W * H;
+const _gScore = new Float64Array(_N);   // best cost to reach a node
+const _came   = new Int32Array(_N);     // parent node index (-1 at start)
+const _stamp  = new Int32Array(_N);     // generation a node was first seen
+const _closed = new Uint8Array(_N);     // settled this generation
+let   _gen    = 0;
+
+const _score = (idx, gx, gy) =>
+  _gScore[idx] + Math.abs((idx % W) - gx) + Math.abs(((idx / W) | 0) - gy);
+
+function _heapUp(heap, c, gx, gy) {
+  while (c > 0) {
+    const p = (c - 1) >> 1;
+    if (_score(heap[p], gx, gy) <= _score(heap[c], gx, gy)) break;
+    const t = heap[p]; heap[p] = heap[c]; heap[c] = t;
+    c = p;
+  }
+}
+function _heapDown(heap, gx, gy) {
+  const top = heap[0], last = heap.pop();
+  if (heap.length === 0) return top;
+  heap[0] = last;
+  let i = 0;
+  for (;;) {
+    const l = 2 * i + 1, r = l + 1;
+    let s = i;
+    if (l < heap.length && _score(heap[l], gx, gy) < _score(heap[s], gx, gy)) s = l;
+    if (r < heap.length && _score(heap[r], gx, gy) < _score(heap[s], gx, gy)) s = r;
+    if (s === i) break;
+    const t = heap[s]; heap[s] = heap[i]; heap[i] = t;
+    i = s;
+  }
+  return top;
+}
+
+function astarPath(sx, sy, gx, gy) {
+  const start = sy * W + sx, goal = gy * W + gx;
+  if (start === goal) return [];
+
+  _gen++;
+  _gScore[start] = 0;
+  _came[start] = -1;
+  _stamp[start] = _gen;
+  _closed[start] = 0;
+
+  const heap = [start];
+  let expanded = 0;
+  const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+  while (heap.length) {
+    const cur = _heapDown(heap, gx, gy);
+    if (cur === goal) {
+      const path = [];
+      for (let n = goal; n !== start; n = _came[n]) path.push([n % W, (n / W) | 0]);
+      path.reverse();
+      return path;
+    }
+    if (_closed[cur] === 1 && _stamp[cur] === _gen) continue;  // stale heap entry
+    _closed[cur] = 1;
+    if (++expanded > ASTAR_MAX_NODES) return null;
+
+    const cx = cur % W, cy = (cur / W) | 0;
+    for (const [dx, dy] of DIRS) {
+      const nx = cx + dx, ny = cy + dy;
+      if (!walkable(nx, ny)) continue;
+      const nb = ny * W + nx;
+      // Other monsters block the path; the goal tile (player) never does.
+      if (nb !== goal && entityAt(nx, ny)) continue;
+      const tentative = _gScore[cur] + 1;
+      if (_stamp[nb] !== _gen || tentative < _gScore[nb]) {
+        _gScore[nb] = tentative;
+        _came[nb] = cur;
+        _stamp[nb] = _gen;
+        _closed[nb] = 0;
+        heap.push(nb);
+        _heapUp(heap, heap.length - 1, gx, gy);
+      }
+    }
+  }
+  return null;  // no route to the player
+}
+
+// Old behaviour: one greedy step toward the player, sliding along walls.
+// Used as a fallback when A* finds no usable move this turn.
+function greedyStep(m) {
+  const sx = Math.sign(player.x - m.x);
+  const sy = Math.sign(player.y - m.y);
+  const options = [[sx, sy], [sx, 0], [0, sy]];
+  for (const [dx, dy] of options) {
+    if (dx === 0 && dy === 0) continue;
+    const nx = m.x + dx, ny = m.y + dy;
+    if (walkable(nx, ny) && !entityAt(nx, ny) &&
+        !(nx === player.x && ny === player.y)) {
+      m.x = nx; m.y = ny;
+      return;
+    }
+  }
+}
+
+// Move one step toward the player, following a cached A* path when the
+// player hasn't moved since it was computed. This is where the 20-monster
+// budget is spent: a stationary player (waiting, or fighting an adjacent
+// foe) lets every other monster reuse its path instead of re-searching.
+function stepTowardPlayer(m) {
+  const goalMatches = m.pathGoalX === player.x && m.pathGoalY === player.y;
+  if (!m.path || m.path.length === 0 || !goalMatches) {
+    m.path = astarPath(m.x, m.y, player.x, player.y);
+    m.pathGoalX = player.x;
+    m.pathGoalY = player.y;
+  }
+
+  if (m.path && m.path.length) {
+    const [nx, ny] = m.path[0];
+    if (walkable(nx, ny) && !entityAt(nx, ny) &&
+        !(nx === player.x && ny === player.y)) {
+      m.x = nx; m.y = ny;
+      m.path.shift();
+      return;
+    }
+    m.path = null;   // next step blocked (usually another monster) — re-path later
+  }
+
+  greedyStep(m);     // A* gave no usable move this turn; fall back
+}
+
+/* ---------------------------------------------------------------
    Monster turns
    --------------------------------------------------------------- */
 function monsterTurn() {
@@ -594,6 +733,7 @@ function monsterTurn() {
 
     if (m.confused > 0) {
       m.confused--;
+      m.path = null;   // a random stumble invalidates any cached route
       const dx = randInt(-1, 1), dy = randInt(-1, 1);
       if (walkable(m.x + dx, m.y + dy) && !entityAt(m.x + dx, m.y + dy) &&
           !(m.x + dx === player.x && m.y + dy === player.y)) {
@@ -607,19 +747,8 @@ function monsterTurn() {
     const dist = Math.max(Math.abs(m.x - player.x), Math.abs(m.y - player.y));
     if (dist === 1) { monsterAttack(m); continue; }
 
-    // Greedy step toward the player, sliding along walls when blocked.
-    const sx = Math.sign(player.x - m.x);
-    const sy = Math.sign(player.y - m.y);
-    const options = [[sx, sy], [sx, 0], [0, sy]];
-    for (const [dx, dy] of options) {
-      if (dx === 0 && dy === 0) continue;
-      const nx = m.x + dx, ny = m.y + dy;
-      if (walkable(nx, ny) && !entityAt(nx, ny) &&
-          !(nx === player.x && ny === player.y)) {
-        m.x = nx; m.y = ny;
-        break;
-      }
-    }
+    // A* step toward the player (cached per monster; see stepTowardPlayer).
+    stepTowardPlayer(m);
   }
 }
 

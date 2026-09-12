@@ -42,11 +42,14 @@ naive full searches per monster per turn could stall. Mitigations:
 
 - Only monsters the player can see path at all (the sight gate already culls most
   of them most of the time — the expensive case is a room full of visible foes).
-- Per-turn **node-expansion budget**: A* is capped at a max number of expanded
-  nodes (`ASTAR_MAX_NODES`). The map is 60×33 = 1980 tiles, so even an
-  uncapped search is bounded, but the cap protects against 20 simultaneous
-  full-grid searches. If a monster's search exceeds the budget, it falls back to
-  the old greedy step for that turn.
+- Per-search **node-expansion cap**: `ASTAR_MAX_NODES = W * H` (the whole grid,
+  1980). The map is small and connected and the player is visible to any monster
+  that paths, so a route almost always exists and is short — A* settles far fewer
+  nodes than the grid for a real path. The cap is set to the full grid on purpose
+  so a *solvable* floor never spuriously falls back; it only bites the pathological
+  / unreachable case, bounding it to a single full-grid sweep (then greedy
+  fallback). Scratch arrays are module-level and reused via a generation stamp, so
+  a search allocates nothing and 20 searches a turn stay cheap.
 - **Path cache per monster**: each monster stores the path it computed and the
   player position it was computed for. If the player hasn't moved since, the
   monster reuses the cached path (popping the next step) instead of re-searching.
