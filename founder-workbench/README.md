@@ -8,6 +8,21 @@ It is deliberately **not** a chat interface and **not** an idea generator. AI is
 a component inside the structure, scoped to each stage and returning typed data
 — never a chat bubble.
 
+## Deploy your own live copy
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FDevonIaquinta%2FNotion&root-directory=founder-workbench&project-name=founder-workbench&repository-name=founder-workbench&env=AUTH_SECRET%2CALLOW_DEMO_LOGIN&stores=%5B%7B%22type%22%3A%22postgres%22%7D%5D)
+
+The button copies this repo, provisions a Postgres database, and builds the app.
+When prompted, set two variables:
+
+- **`AUTH_SECRET`** — any random 32+ byte string (`openssl rand -base64 32`).
+- **`ALLOW_DEMO_LOGIN`** — `1` for one-click sign-in (no email). Leave it unset
+  for a URL you intend to share, since when on, anyone with the link can sign in.
+
+If a Postgres store isn't offered during setup, add one afterward under the
+project's **Storage** tab, then **Redeploy**. Full details in
+[Deploy to a live URL](#deploy-to-a-live-url-vercel--postgres) below.
+
 ## Why it's shaped this way
 
 The target user is a scanner: enthusiastic, prone to abandoning an idea at the
