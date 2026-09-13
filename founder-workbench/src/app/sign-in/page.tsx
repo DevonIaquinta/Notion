@@ -1,10 +1,13 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signIn, auth } from "@/auth";
 import { Eyebrow } from "@/components/ui";
+import { demoLoginEnabled } from "@/lib/demo";
 
 export default async function SignInPage() {
   const session = await auth();
   if (session?.user) redirect("/");
+  const demo = demoLoginEnabled();
 
   return (
     <div className="mx-auto max-w-measure py-10">
@@ -14,6 +17,15 @@ export default async function SignInPage() {
         Enter your email. We send a one-time link — no password. When you come back weeks
         later, you land exactly where you left off.
       </p>
+
+      {demo && (
+        <div className="mt-6">
+          <Link href="/api/demo-login" prefetch={false} className="btn btn-primary">
+            Enter the workbench
+          </Link>
+          <p className="eyebrow mt-3">Demo access — one click, no email.</p>
+        </div>
+      )}
 
       <form
         action={async (formData: FormData) => {

@@ -60,12 +60,37 @@ the server console — open it to sign in. No SMTP required.
 **AI in dev:** set `ANTHROPIC_API_KEY` to enable the per-stage assists. Without
 it, the app is fully usable; assist buttons report that AI isn't configured.
 
-## Deploy (Vercel + Neon)
+## Deploy to a live URL (Vercel + Postgres)
 
-1. Set `datasource db { provider = "postgresql" }` in `prisma/schema.prisma`.
-2. Point `DATABASE_URL` at Neon; set `AUTH_SECRET`, `EMAIL_SERVER`, `EMAIL_FROM`,
-   `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`.
-3. `prisma migrate deploy` (or `db push`) on release; `npm run build`.
+The repo is deploy-ready: `vercel-build` (see `package.json`) flips the Prisma
+datasource to Postgres and runs `prisma db push` at build time, so the committed
+schema stays SQLite for local dev and nothing else needs editing. `vercel.json`
+wires this up.
+
+**Steps (Vercel dashboard):**
+
+1. **vercel.com → Add New → Project → Import** the `Notion` repo.
+2. **Root Directory:** `founder-workbench`. **Production Branch:** the branch
+   this app lives on (`claude/founder-workbench-spec-46qobp`) until it's merged
+   to the repo default.
+3. **Storage tab → Create → Postgres** (Vercel Postgres / Neon). This injects
+   `DATABASE_URL` automatically.
+4. **Environment variables:**
+   - `AUTH_SECRET` — any random 32+ byte string (`openssl rand -base64 32`).
+   - `ALLOW_DEMO_LOGIN` = `1` — shows a one-click "Enter the workbench" button so
+     you can sign in without email. **Leave unset for a shareable/public URL** —
+     when on, anyone with the link can sign in as anyone.
+   - Optional: `ANTHROPIC_API_KEY` to enable the AI assists.
+5. **Deploy.** If the first build fails because the database wasn't attached yet,
+   click **Redeploy** once the Postgres store exists.
+
+Then open the URL. With `ALLOW_DEMO_LOGIN=1`, one click on **Enter the workbench**
+signs you in. For real sign-in, set `EMAIL_SERVER`/`EMAIL_FROM` (any SMTP or a
+provider like Resend) and leave demo login off.
+
+**Auth in dev:** with no `EMAIL_SERVER`, the magic-link URL prints to the server
+console — open it to sign in. Or set `ALLOW_DEMO_LOGIN=1` in `.env` for the
+one-click button locally too.
 
 ## Architecture notes
 
@@ -77,4 +102,5 @@ it, the app is fully usable; assist buttons report that AI isn't configured.
 - **Each AI stage module** (`src/lib/ai/*`) forces a single tool call whose
   input schema *is* the stage's output contract, so responses are always typed.
 - SQLite doesn't support Prisma enums or scalar arrays, so enums are validated
-  `String`s (`src/lib/types.ts`) and arrays are `Json`. One schema, both engines.
+  `String`s (`src/lib/types.ts`) and array fields are JSON-encoded text
+  (`asStringArray`/`encodeStringArray`). One schema, both engines.
