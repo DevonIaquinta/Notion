@@ -1,0 +1,586 @@
+<title>Care Circle Template</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --paper:#F6F5F1; --surface:#FFFFFF; --surface-2:#FCFBF7;
+    --ink:#20261D; --ink-soft:#57604F; --ink-faint:#8B9184;
+    --line:#E5E2D8; --line-soft:#EEEBE2;
+    --sage:#4C6B5C; --sage-deep:#3A5546; --sage-soft:#E7EDE7; --sage-tint:#F0F3EE;
+    --good:#4C7A52; --good-bg:#E7F0E6;
+    --watch:#A8791F; --watch-bg:#F6EDD7;
+    --concern:#B15E33; --concern-bg:#F6E6DA;
+    --urgent:#AE3730; --urgent-bg:#F6DEDB;
+    --info:#3E6377; --info-bg:#E2ECF0;
+    --shadow:0 1px 2px rgba(32,38,29,.04), 0 8px 24px -12px rgba(32,38,29,.14);
+    --shadow-lift:0 2px 6px rgba(32,38,29,.06), 0 18px 40px -16px rgba(32,38,29,.22);
+    --radius:14px; --radius-sm:9px;
+    --maxw:1120px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#13160F; --surface:#1B1F16; --surface-2:#20251B;
+      --ink:#EBEADF; --ink-soft:#AEB3A2; --ink-faint:#7C8274;
+      --line:#2C3126; --line-soft:#242A1F;
+      --sage:#8FB39A; --sage-deep:#A7C7B0; --sage-soft:#25311F; --sage-tint:#1E2519;
+      --good:#7FB183; --good-bg:#20301F;
+      --watch:#D6AB57; --watch-bg:#332A16;
+      --concern:#DB8B5C; --concern-bg:#33231A;
+      --urgent:#E08078; --urgent-bg:#331E1C;
+      --info:#8DB4C6; --info-bg:#1B2A31;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 28px -14px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 22px 48px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#13160F; --surface:#1B1F16; --surface-2:#20251B;
+    --ink:#EBEADF; --ink-soft:#AEB3A2; --ink-faint:#7C8274;
+    --line:#2C3126; --line-soft:#242A1F;
+    --sage:#8FB39A; --sage-deep:#A7C7B0; --sage-soft:#25311F; --sage-tint:#1E2519;
+    --good:#7FB183; --good-bg:#20301F;
+    --watch:#D6AB57; --watch-bg:#332A16;
+    --concern:#DB8B5C; --concern-bg:#33231A;
+    --urgent:#E08078; --urgent-bg:#331E1C;
+    --info:#8DB4C6; --info-bg:#1B2A31;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 28px -14px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 22px 48px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Public Sans",system-ui,-apple-system,sans-serif;
+    font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,h4{font-family:"Newsreader",Georgia,serif;font-weight:500;
+    text-wrap:balance;margin:0;line-height:1.15;letter-spacing:-.01em;}
+  a{color:var(--sage-deep);text-decoration:none}
+  .mono{font-family:"Spline Sans Mono",ui-monospace,monospace}
+
+  /* ── top bar ── */
+  header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--paper) 88%,transparent);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line);}
+  .top-in{max-width:var(--maxw);margin:0 auto;padding:12px 20px;
+    display:flex;align-items:center;gap:14px;}
+  .brand{display:flex;align-items:center;gap:10px;font-family:"Newsreader",serif;
+    font-size:19px;font-weight:600;letter-spacing:-.02em}
+  .brand .dot{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
+    background:var(--sage);color:#fff;font-size:15px}
+  :root[data-theme="dark"] .brand .dot,
+  :root:not([data-theme="light"]) .brand .dot{color:#12160f}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .brand .dot{color:#12160f}}
+  .top nav{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
+  .top nav a{font-size:13px;color:var(--ink-soft);padding:6px 10px;border-radius:7px}
+  .top nav a:hover{background:var(--sage-tint);color:var(--ink)}
+  .themebtn{border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);
+    border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:15px;flex:none}
+  .themebtn:hover{border-color:var(--sage)}
+
+  /* ── hero ── */
+  .hero{max-width:var(--maxw);margin:0 auto;padding:52px 20px 30px}
+  .eyebrow{font-family:"Spline Sans Mono",monospace;font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--sage-deep);margin-bottom:16px}
+  .hero h1{font-size:clamp(34px,6vw,58px);line-height:1.02;max-width:15ch}
+  .hero p.lede{font-size:clamp(16px,2.4vw,20px);color:var(--ink-soft);max-width:56ch;
+    margin:20px 0 0;line-height:1.5}
+  .hero-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+  .chip-stat{display:flex;align-items:baseline;gap:8px;background:var(--surface);
+    border:1px solid var(--line);border-radius:var(--radius-sm);padding:9px 14px}
+  .chip-stat b{font-family:"Newsreader",serif;font-size:20px;font-weight:600}
+  .chip-stat span{font-size:12.5px;color:var(--ink-soft)}
+  .example-note{display:inline-flex;align-items:center;gap:8px;margin-top:22px;
+    font-size:12.5px;color:var(--ink-faint);background:var(--surface-2);
+    border:1px dashed var(--line);border-radius:20px;padding:6px 13px}
+
+  /* ── workspace shell ── */
+  .shell{max-width:var(--maxw);margin:0 auto;padding:8px 20px 80px;
+    display:grid;grid-template-columns:236px 1fr;gap:26px;align-items:start}
+  aside.rail{position:sticky;top:70px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
+  .rail h4{font-family:"Spline Sans Mono",monospace;font-weight:500;font-size:11px;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);
+    margin:14px 6px 7px}
+  .rail h4:first-child{margin-top:2px}
+  .rail a{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px;
+    color:var(--ink-soft);font-size:14px;font-weight:500;transition:background .12s}
+  .rail a:hover{background:var(--sage-tint);color:var(--ink)}
+  .rail a .ic{width:20px;text-align:center;font-size:15px;flex:none}
+
+  main{min-width:0;display:flex;flex-direction:column;gap:20px}
+
+  /* ── generic panel / db card ── */
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;scroll-margin-top:74px}
+  .panel-head{padding:18px 20px 14px;border-bottom:1px solid var(--line-soft)}
+  .panel-head .row1{display:flex;align-items:center;gap:11px}
+  .panel-head .ic{font-size:22px;line-height:1;filter:saturate(1.05)}
+  .panel-head h2{font-size:22px}
+  .panel-head h3{font-size:19px}
+  .panel-head .desc{color:var(--ink-soft);font-size:13.5px;margin:8px 0 0;max-width:70ch}
+  .views{display:flex;gap:6px;flex-wrap:wrap;margin-top:13px}
+  .view-tab{font-size:12px;color:var(--ink-soft);border:1px solid var(--line);
+    border-radius:7px;padding:4px 9px;display:inline-flex;gap:6px;align-items:center;
+    background:var(--surface-2)}
+  .view-tab.active{background:var(--sage);color:#fff;border-color:var(--sage)}
+  :root[data-theme="dark"] .view-tab.active{color:#12160f}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .view-tab.active{color:#12160f}}
+  .view-tab .vt{opacity:.7;font-family:"Spline Sans Mono",monospace;font-size:10px}
+  .view-tab.active .vt{opacity:.85}
+
+  /* ── mini tables ── */
+  .tbl-wrap{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:13.5px}
+  thead th{text-align:left;font-weight:500;color:var(--ink-faint);
+    font-family:"Spline Sans Mono",monospace;font-size:10.5px;letter-spacing:.05em;
+    text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--line);
+    white-space:nowrap;background:var(--surface-2)}
+  tbody td{padding:11px 14px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:var(--sage-tint)}
+  td .title-cell{font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .num{font-family:"Spline Sans Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  /* ── tags / pills ── */
+  .tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;
+    padding:2.5px 9px;border-radius:20px;white-space:nowrap;
+    background:var(--sage-soft);color:var(--sage-deep)}
+  .tag.grey{background:var(--line-soft);color:var(--ink-soft)}
+  .ms{display:inline-flex;gap:5px;flex-wrap:wrap}
+  .st{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+    padding:2.5px 10px;border-radius:20px;white-space:nowrap}
+  .st::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.9}
+  .st.good{background:var(--good-bg);color:var(--good)}
+  .st.watch{background:var(--watch-bg);color:var(--watch)}
+  .st.concern{background:var(--concern-bg);color:var(--concern)}
+  .st.urgent{background:var(--urgent-bg);color:var(--urgent)}
+  .st.info{background:var(--info-bg);color:var(--info)}
+  .st.grey{background:var(--line-soft);color:var(--ink-soft)}
+  .chk{font-size:14px}
+  .type-chip{font-family:"Spline Sans Mono",monospace;font-size:10px;color:var(--ink-faint);
+    border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+  .bal-pos{color:var(--good);font-weight:600}
+  .bal-neg{color:var(--concern);font-weight:600}
+  .flag{color:var(--urgent)}
+
+  /* ── ER sheet ── */
+  .er{border:2px solid var(--ink);border-radius:var(--radius)}
+  .er .panel-head{background:var(--urgent-bg);border-bottom:2px solid var(--ink)}
+  .er-body{padding:6px 20px 20px}
+  .er-sec{padding:14px 0;border-bottom:1px solid var(--line-soft)}
+  .er-sec:last-child{border-bottom:none}
+  .er-sec h4{font-family:"Spline Sans Mono",monospace;font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px}
+  .er-sec .big{font-family:"Newsreader",serif;font-size:16px}
+  .kv{color:var(--ink-soft);font-size:13.5px}
+
+  /* ── dashboard columns ── */
+  .dash-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:16px 20px}
+  .dash-card{background:var(--surface-2);border:1px solid var(--line-soft);
+    border-radius:var(--radius-sm);padding:14px}
+  .dash-card h4{font-size:16px;margin-bottom:10px}
+  .lv{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;
+    border:1px solid var(--line-soft);background:var(--surface);margin-bottom:7px;font-size:13px}
+  .lv:last-child{margin-bottom:0}
+  .lv .ic{font-size:15px}
+  .lv .meta{margin-left:auto;font-size:11.5px;color:var(--ink-faint);
+    font-family:"Spline Sans Mono",monospace}
+
+  /* ── section label ── */
+  .sec-label{display:flex;align-items:center;gap:12px;margin:22px 2px 2px}
+  .sec-label span{font-family:"Spline Sans Mono",monospace;font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-faint)}
+  .sec-label .ln{height:1px;background:var(--line);flex:1}
+
+  /* ── content page cards ── */
+  .content-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:16px 20px}
+  .todo{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;padding:5px 0;color:var(--ink-soft)}
+  .todo .box{width:15px;height:15px;border:1.5px solid var(--sage);border-radius:4px;flex:none;margin-top:2px}
+  .conv{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line-soft);font-family:"Newsreader",serif;font-size:15.5px}
+  .conv:last-child{border-bottom:none}
+  .conv .n{font-family:"Spline Sans Mono",monospace;font-size:11px;color:var(--sage-deep);flex:none}
+
+  /* ── build note callout ── */
+  .callout{display:flex;gap:11px;background:var(--info-bg);border:1px solid color-mix(in srgb,var(--info) 30%,transparent);
+    border-radius:var(--radius-sm);padding:13px 15px;font-size:13.5px;color:var(--ink);margin:0 20px 18px}
+  .callout .i{font-size:16px;flex:none}
+  .callout b{color:var(--info)}
+
+  footer{max-width:var(--maxw);margin:0 auto;padding:30px 20px 60px;color:var(--ink-faint);
+    font-size:12.5px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;padding:2px 20px 16px}
+  .legend .li{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-soft)}
+  .legend .sw{width:9px;height:9px;border-radius:50%}
+
+  @media (max-width:860px){
+    .shell{grid-template-columns:1fr}
+    aside.rail{position:static;order:-1}
+    .rail-inner{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px}
+    .dash-cols,.content-grid{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:no-preference){
+    html{scroll-behavior:smooth}
+  }
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><span class="dot">◍</span> Care Circle</div>
+    <nav>
+      <a href="#dashboard">Home</a>
+      <a href="#er">Emergency Sheet</a>
+      <a href="#databases">Databases</a>
+      <a href="#pages">Pages</a>
+    </nav>
+    <button class="themebtn" id="themebtn" title="Toggle theme" aria-label="Toggle light/dark theme">◐</button>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="eyebrow">Notion template · aging-parent care coordination</div>
+  <h1>The whole circle of care, in one calm place.</h1>
+  <p class="lede">Nine linked databases and four ready pages that turn “Mom seems worse lately” into a timeline a doctor can act on — and stop the group-chat scramble over who’s driving Thursday.</p>
+  <div class="hero-meta">
+    <div class="chip-stat"><b>9</b><span>linked databases</span></div>
+    <div class="chip-stat"><b>4</b><span>content pages</span></div>
+    <div class="chip-stat"><b>1</b><span>print-and-go ER sheet</span></div>
+    <div class="chip-stat"><b>2-pass</b><span>API provisioning</span></div>
+  </div>
+  <div class="example-note">◍ Preview populated with one example family’s data — not real records.</div>
+</section>
+
+<div class="shell">
+  <aside class="rail">
+    <div class="rail-inner">
+      <div>
+        <h4>Pages</h4>
+        <a href="#dashboard"><span class="ic">🏠</span> Care Circle — Home</a>
+        <a href="#er"><span class="ic">🚨</span> Emergency Sheet</a>
+        <a href="#setup"><span class="ic">🧭</span> Setup Guide</a>
+        <a href="#conversations"><span class="ic">💬</span> Hard Conversations</a>
+      </div>
+      <div>
+        <h4>Databases</h4>
+        <a href="#contacts"><span class="ic">📇</span> Providers &amp; Contacts</a>
+        <a href="#care_team"><span class="ic">🤝</span> Care Team</a>
+        <a href="#conditions"><span class="ic">🩺</span> Conditions &amp; Allergies</a>
+        <a href="#medications"><span class="ic">💊</span> Medications</a>
+        <a href="#care_log"><span class="ic">📓</span> Care Log</a>
+        <a href="#appointments"><span class="ic">📅</span> Appointments</a>
+        <a href="#coverage"><span class="ic">🗓️</span> Coverage Schedule</a>
+        <a href="#expenses"><span class="ic">💵</span> Shared Expenses</a>
+        <a href="#documents"><span class="ic">🗂️</span> Key Documents</a>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <!-- ── DASHBOARD ── -->
+    <section class="panel" id="dashboard">
+      <div class="panel-head">
+        <div class="row1"><span class="ic">🏠</span><h2>Care Circle — Home</h2></div>
+        <p class="desc">The landing page. Everything that needs a person this week, and the observations worth a second look.</p>
+      </div>
+      <div class="callout"><span class="i">👉</span><div><b>Start here → Setup Guide.</b> Fifteen minutes, ordered by urgency. Buyers who finish setup don’t refund.</div></div>
+      <div class="dash-cols">
+        <div class="dash-card">
+          <h4>This Week</h4>
+          <div class="lv"><span class="ic">🗓️</span> Sunday dinner — Brianna <span class="meta">Sep 14</span></div>
+          <div class="lv"><span class="ic">📅</span> Cardiology follow-up <span class="meta">Sep 18</span></div>
+          <div class="lv"><span class="ic">🗓️</span> Pharmacy run — Dana <span class="meta">Sep 19</span></div>
+        </div>
+        <div class="dash-card">
+          <h4>Needs Attention</h4>
+          <div class="lv"><span class="ic">🗓️</span> Sat visit — <span class="st urgent">Unclaimed</span></div>
+          <div class="lv"><span class="ic">💊</span> Apixaban refill <span class="meta">5 days</span></div>
+          <div class="lv"><span class="ic">🗂️</span> Healthcare Proxy <span class="st concern">Missing</span></div>
+        </div>
+      </div>
+      <div class="dash-card" style="margin:0 20px 18px">
+        <h4>Recent Observations</h4>
+        <div class="lv"><span class="ic">📓</span> “More confused after sundown” <span class="st concern" style="margin-left:auto">Concerning</span></div>
+        <div class="lv"><span class="ic">📓</span> “Skipped lunch again” <span class="st watch" style="margin-left:auto">Worth watching</span></div>
+      </div>
+    </section>
+
+    <!-- ── ER SHEET ── -->
+    <div class="sec-label" id="er"><span>The print-and-go star</span><div class="ln"></div></div>
+    <section class="panel er">
+      <div class="panel-head">
+        <div class="row1"><span class="ic">🚨</span><h2>Emergency Sheet</h2></div>
+        <p class="desc">One sheet of paper, black-and-white, readable at arm’s length. Car, go-bag, fridge. Update after every med change.</p>
+      </div>
+      <div class="er-body">
+        <div class="er-sec">
+          <h4>Patient</h4>
+          <div class="big">Eleanor M. Whitfield</div>
+          <div class="kv">DOB 03/1947 · Medicare #···-··-4821 · 214 Larkspur Ln</div>
+        </div>
+        <div class="er-sec">
+          <h4>In an emergency, call</h4>
+          <div class="big">Brianna Whitfield — healthcare proxy · (503) 555-0147</div>
+          <div class="kv">Backup: Dana Whitfield · (503) 555-0192</div>
+        </div>
+        <div class="er-sec">
+          <h4>Allergies &amp; conditions</h4>
+          <div class="ms" style="gap:8px">
+            <span class="st urgent">Atrial fibrillation</span>
+            <span class="st urgent">Penicillin — anaphylaxis</span>
+            <span class="st watch">Type 2 diabetes</span>
+          </div>
+        </div>
+        <div class="er-sec">
+          <h4>Current medications</h4>
+          <div class="kv" style="color:var(--ink)">Apixaban 5&nbsp;mg 2×/day · Metformin 500&nbsp;mg 2×/day · Lisinopril 10&nbsp;mg 1×/day</div>
+        </div>
+        <div class="er-sec">
+          <h4>Advance directive</h4>
+          <div class="kv" style="color:var(--ink)"><b>DNR on file.</b> Signed POLST in the blue folder, kitchen desk drawer.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="sec-label" id="databases"><span>The nine databases</span><div class="ln"></div></div>
+
+    <!-- ── CONTACTS ── -->
+    <section class="panel" id="contacts">
+      <div class="panel-head">
+        <div class="row1"><span class="ic">📇</span><h3>Providers &amp; Contacts</h3></div>
+        <p class="desc">Every human or org involved in care — doctors, pharmacy, the neighbor with a spare key.</p>
+        <div class="views">
+          <span class="view-tab active"><span class="vt">board</span> By Role</span>
+          <span class="view-tab"><span class="vt">table</span> Quick Call List</span>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Name</th><th>Role</th><th>Specialty</th><th>Phone</th><th>Active</th></tr></thead>
+        <tbody>
+          <tr><td><span class="title-cell">Dr. Alan Reyes</span></td><td><span class="tag">Primary Care</span></td><td>Internal medicine</td><td class="num">(503) 555-0110</td><td class="chk">✓</td></tr>
+          <tr><td><span class="title-cell">Dr. Priya Nair</span></td><td><span class="tag">Specialist</span></td><td>Cardiology</td><td class="num">(503) 555-0134</td><td class="chk">✓</td></tr>
+          <tr><td><span class="title-cell">Bayview Pharmacy</span></td><td><span class="tag">Pharmacy</span></td><td>—</td><td class="num">(503) 555-0166</td><td class="chk">✓</td></tr>
+          <tr><td><span class="title-cell">Sunrise Home Health</span></td><td><span class="tag">Home Health</span></td><td>Aide, 3×/wk</td><td class="num">(503) 555-0188</td><td class="chk">✓</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ── CARE TEAM ── -->
+    <section class="panel" id="care_team">
+      <div class="panel-head">
+        <div class="row1"><span class="ic">🤝</span><h3>Care Team</h3></div>
+        <p class="desc">The people sharing the load. Drives expense splitting and coverage assignment — <b>Balance</b> is a rollup + formula (positive = owed money).</p>
+        <div class="views"><span class="view-tab active"><span class="vt">table</span> Who Owes What</span></div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Name</th><th>Relationship</th><th>Can Help With</th><th>Share %</th><th>Total Paid</th><th>Balance</th></tr></thead>
+        <tbody>
+          <tr><td><span class="title-cell">Brianna</span></td><td><span class="tag grey">Child</span></td><td><span class="ms"><span class="tag">Visits</span><span class="tag">Medical Admin</span></span></td><td class="num">40%</td><td class="num">$1,048</td><td class="num bal-pos">+$312</td></tr>
+          <tr><td><span class="title-cell">Dana</span></td><td><span class="tag grey">Child</span></td><td><span class="ms"><span class="tag">Transport</span><span class="tag">Home Repair</span></span></td><td class="num">30%</td><td class="num">$396</td><td class="num bal-neg">−$132</td></tr>
+          <tr><td><span class="title-cell">Marcus</span></td><td><span class="tag grey">Child</span></td><td><span class="ms"><span class="tag">Finances</span><span class="tag">Legal</span></span></td><td class="num">30%</td><td class="num">$348</td><td class="num bal-neg">−$180</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ── CONDITIONS ── -->
+    <section class="panel" id="conditions">
+      <div class="panel-head">
+        <div class="row1"><span class="ic">🩺</span><h3>Conditions &amp; Allergies</h3></div>
+        <p class="desc">Standing medical facts. Feeds the ER sheet through the “Show on ER Sheet” filter.</p>
+        <div class="views">
+          <span class="view-tab active"><span class="vt">table</span> ER Sheet — Conditions</span>
+          <span class="view-tab"><span class="vt">table</span> All</span>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Name</th><th>Type</th><th>Severity</th><th>Managed By</th><th>ER</th></tr></thead>
+        <tbody>
+          <tr><td><span class="title-cell">Atrial fibrillation</span></td><td><span class="tag grey">Diagnosis</span></td><td><span class="st urgent">Critical</span></td><td><span class="tag">↗ Dr. Nair</span></td><td class="chk">✓</td></tr>
+          <tr><td><span class="title-cell">Penicillin allergy</span></td><td><span class="tag grey">Allergy</span></td><td><span class="st concern">Significant</span></td><td>—</td><td class="chk">✓</td></tr>
+          <tr><td><span class="title-cell">Type 2 diabetes</span></td><td><span class="tag grey">Diagnosis</span></td><td><span class="st concern">Significant</span></td><td><span class="tag">↗ Dr. Reyes</span></td><td class="chk">✓</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ── MEDICATIONS ── -->
+    <section class="panel" id="medications">
+      <div class="panel-head">
+        <div class="row1"><span class="ic">💊</span><h3>Medications</h3></div>
+        <p class="desc">Current and discontinued — the discontinued history matters, doctors ask what’s been tried. <b>Refill Alert</b> is a formula off the refill date.</p>
+        <div class="views">
+          <span class="view-tab active"><span class="vt">table</span> ER Sheet — Current Meds</span>
+          <span class="view-tab"><span class="vt">board</span> Daily Schedule</span>
+          <span class="view-tab"><span class="vt">table</span> Refills Due</span>
+          <span class="view-tab"><span class="vt">table</span> Discontinued History</span>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Medication</th><th>Dose</th><th>Frequency</th><th>Prescriber</th><th>Status</th><th>Next Refill</th></tr></thead>
+        <tbody>
+          <tr><td><span class="title-cell">Apixaban (Eliquis)</span></td><td class="num">5 mg</td><td>Twice daily</td><td><span class="tag">↗ Dr. Nair</span></td><td><span class="st good">Active</span></td><td class="num flag">⚠ 5 days</td></tr>
+          <tr><td><span class="title-cell">Metformin</span></td><td class="num">500 mg</td><td>Twice daily</td><td><span class="tag">↗ Dr. Reyes</span></td><td><span class="st good">Active</span></td><td class="num">22 days</td></tr>
+          <tr><td><span class="title-cell">Lisinopril</span></td><td class="num">10 mg</td><td>Once daily</td><td><span class="tag">↗ Dr. Reyes</span></td><td><span class="st good">Active</span></td><td class="num">18 days</td></tr>
+          <tr><td><span class="title-cell">Furosemide</span></td><td class="num">20 mg</td><td>Once daily</td><td><span class="tag">↗ Dr. Nair</span></td><td><span class="st grey">Discontinued</span></td><td class="num">—</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ── CARE LOG ── -->
+    <section class="panel" id="care_log">
+      <div class="panel-head">
+        <div class="row1"><span class="ic">📓</span><h3>Care Log</h3></div>
+        <p class="desc">Dated observations — the single most valuable database here. Turns a vague worry into evidence, and documents the timeline for care-level decisions.</p>
+        <div class="views">
+          <span class="view-tab active"><span class="vt">table</span> Recent</span>
+          <span class="view-tab"><span class="vt">table</span> Flagged for Next Visit</span>
+          <span class="view-tab"><span class="vt">board</span> By Category</span>
+          <span class="view-tab"><span class="vt">calendar</span> Timeline</span>
+          <span class="view-tab"><span class="vt">chart</span> Trend</span>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Entry</th><th>Date</th><th>Category</th><th>Concern</th><th>Observed By</th><th>Flag</th></tr></thead>
+        <tbody>
+          <tr><td><span class="title-cell">More confused after sundown</span></td><td class="num">Sep 11</td><td><span class="tag">Cognition/Memory</span></td><td><span class="st concern">Concerning</span></td><td><span class="tag">↗ Brianna</span></td><td class="flag">⚑</td></tr>
+          <tr><td><span class="title-cell">Skipped lunch again</span></td><td class="num">Sep 10</td><td><span class="tag">Appetite</span></td><td><span class="st watch">Worth watching</span></td><td><span class="tag">↗ Dana</span></td><td>—</td></tr>
+          <tr><td><span class="title-cell">Steady on the stairs today</span></td><td class="num">Sep 08</td><td><span class="tag">Mobility</span></td><td><span class="st good">Routine</span></td><td><span class="tag">↗ Brianna</span></td><td>—</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ── APPOINTMENTS ── -->
+    <section class="panel" id="appointments">
+      <div class="panel-head">
+        <div class="row1"><span class="ic">📅</span><h3>Appointments</h3></div>
+        <p class="desc">Before-and-after structure. The “Questions to Ask” field stops you leaving the office having forgotten the one thing you meant to raise.</p>
+        <div class="views">
+          <span class="view-tab active"><span class="vt">calendar</span> Upcoming</span>
+          <span class="view-tab"><span class="vt">table</span> Needs a Driver</span>
+          <span class="view-tab"><span class="vt">table</span> Open Follow-Ups</span>
+          <span class="view-tab"><span class="vt">table</span> Visit History</span>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Appointment</th><th>Date</th><th>Provider</th><th>Driver</th><th>Transport</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><span class="title-cell">Cardiology follow-up</span></td><td class="num">Sep 18, 10:30</td><td><span class="tag">↗ Dr. Nair</span></td><td><span class="tag">↗ Dana</span></td><td class="chk">✓</td><td><span class="st info">Scheduled</span></td></tr>
+          <tr><td><span class="title-cell">Annual physical</span></td><td class="num">—</td><td><span class="tag">↗ Dr. Reyes</span></td><td>—</td><td class="chk">—</td><td><span class="st watch">Needs scheduling</span></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ── COVERAGE ── -->
+    <section class="panel" id="coverage">
+      <div class="panel-head">
+        <div class="row1"><span class="ic">🗓️</span><h3>Coverage Schedule</h3></div>
+        <p class="desc">Who’s got which day. Solves the “I thought <em>you</em> were going Thursday” problem. Unclaimed days are the guilt-free ask.</p>
+        <div class="views">
+          <span class="view-tab active"><span class="vt">calendar</span> This Month</span>
+          <span class="view-tab"><span class="vt">table</span> Unclaimed</span>
+          <span class="view-tab"><span class="vt">board</span> By Person</span>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>What</th><th>Date</th><th>Type</th><th>Assigned To</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><span class="title-cell">Saturday visit</span></td><td class="num">Sep 13</td><td><span class="tag">Visit</span></td><td>—</td><td><span class="st urgent">Open</span></td></tr>
+          <tr><td><span class="title-cell">Sunday dinner</span></td><td class="num">Sep 14</td><td><span class="tag">Meal</span></td><td><span class="tag">↗ Brianna</span></td><td><span class="st info">Claimed</span></td></tr>
+          <tr><td><span class="title-cell">Pharmacy run</span></td><td class="num">Sep 19</td><td><span class="tag">Errand</span></td><td><span class="tag">↗ Dana</span></td><td><span class="st info">Claimed</span></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ── EXPENSES ── -->
+    <section class="panel" id="expenses">
+      <div class="panel-head">
+        <div class="row1"><span class="ic">💵</span><h3>Shared Expenses</h3></div>
+        <p class="desc">Running tally. Prevents the slow resentment build that wrecks sibling relationships. Feeds each person’s <b>Total Paid</b> rollup on Care Team.</p>
+        <div class="views">
+          <span class="view-tab active"><span class="vt">table</span> All Expenses</span>
+          <span class="view-tab"><span class="vt">board</span> By Person</span>
+          <span class="view-tab"><span class="vt">chart</span> By Category</span>
+          <span class="view-tab"><span class="vt">table</span> Tax Year</span>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Expense</th><th>Date</th><th>Amount</th><th>Paid By</th><th>Category</th><th>Deductible?</th></tr></thead>
+        <tbody>
+          <tr><td><span class="title-cell">Home health — 1 week</span></td><td class="num">Sep 09</td><td class="num">$640.00</td><td><span class="tag">↗ Brianna</span></td><td><span class="tag grey">Home care</span></td><td class="chk">✓</td></tr>
+          <tr><td><span class="title-cell">Grab bars installed</span></td><td class="num">Sep 06</td><td class="num">$220.00</td><td><span class="tag">↗ Dana</span></td><td><span class="tag grey">Household</span></td><td class="chk">—</td></tr>
+          <tr><td><span class="title-cell">Pharmacy copay</span></td><td class="num">Sep 05</td><td class="num">$48.00</td><td><span class="tag">↗ Brianna</span></td><td><span class="tag grey">Prescriptions</span></td><td class="chk">✓</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- ── DOCUMENTS ── -->
+    <section class="panel" id="documents">
+      <div class="panel-head">
+        <div class="row1"><span class="ic">🗂️</span><h3>Key Documents &amp; Accounts</h3></div>
+        <p class="desc">Where things live — not the documents themselves, the map to them. The “Gaps” view is where most families discover there’s no healthcare proxy.</p>
+        <div class="views">
+          <span class="view-tab active"><span class="vt">table</span> Gaps</span>
+          <span class="view-tab"><span class="vt">board</span> By Type</span>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Document</th><th>Type</th><th>Where the Original Is</th><th>Review By</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><span class="title-cell flag">Healthcare Proxy</span></td><td><span class="tag grey">Healthcare Proxy</span></td><td>—</td><td class="num">—</td><td><span class="st urgent">Missing — action needed</span></td></tr>
+          <tr><td><span class="title-cell">Will / Trust</span></td><td><span class="tag grey">Will/Trust</span></td><td>Attorney — Okafor &amp; Lin</td><td class="num">Jan 2027</td><td><span class="st watch">Needs updating</span></td></tr>
+          <tr><td><span class="title-cell">Durable POA</span></td><td><span class="tag grey">Power of Attorney</span></td><td>Blue folder, kitchen desk</td><td class="num">—</td><td><span class="st good">In place</span></td></tr>
+          <tr><td><span class="title-cell">Advance Directive / DNR</span></td><td><span class="tag grey">Advance Directive/DNR</span></td><td>Blue folder + fridge copy</td><td class="num">—</td><td><span class="st good">In place</span></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <div class="sec-label" id="pages"><span>Content pages</span><div class="ln"></div></div>
+
+    <div class="content-grid" style="padding:0">
+      <section class="panel" id="setup" style="box-shadow:var(--shadow)">
+        <div class="panel-head"><div class="row1"><span class="ic">🧭</span><h3>Setup Guide</h3></div>
+          <p class="desc">15-minute onboarding, ordered by urgency, not by database.</p></div>
+        <div style="padding:14px 20px 18px">
+          <div class="todo"><span class="box"></span> Add everyone to Care Team <span class="num" style="color:var(--ink-faint);margin-left:auto">5 min</span></div>
+          <div class="todo"><span class="box"></span> Enter current meds from the pill bottles <span class="num" style="color:var(--ink-faint);margin-left:auto">10 min</span></div>
+          <div class="todo"><span class="box"></span> Add primary doctor &amp; pharmacy to Contacts</div>
+          <div class="todo"><span class="box"></span> Fill in the Emergency Sheet header and print it</div>
+          <div class="todo"><span class="box"></span> Audit Key Documents — mark what’s missing</div>
+          <div class="todo"><span class="box"></span> Share this page with siblings</div>
+        </div>
+      </section>
+      <section class="panel" id="conversations" style="box-shadow:var(--shadow)">
+        <div class="panel-head"><div class="row1"><span class="ic">💬</span><h3>Hard Conversations Prep</h3></div>
+          <p class="desc">The content page that makes this feel like a product, not a spreadsheet.</p></div>
+        <div style="padding:8px 20px 16px">
+          <div class="conv"><span class="n">01</span> Talking about giving up the car keys</div>
+          <div class="conv"><span class="n">02</span> Raising assisted living without a fight</div>
+          <div class="conv"><span class="n">03</span> Questions before choosing a facility</div>
+          <div class="conv"><span class="n">04</span> Splitting the load when one sibling does everything</div>
+          <div class="conv"><span class="n">05</span> What to ask at a first neurology appointment</div>
+        </div>
+      </section>
+    </div>
+
+    <div class="legend">
+      <div class="li"><span class="sw" style="background:var(--good)"></span> Routine / In place</div>
+      <div class="li"><span class="sw" style="background:var(--watch)"></span> Worth watching</div>
+      <div class="li"><span class="sw" style="background:var(--concern)"></span> Concerning</div>
+      <div class="li"><span class="sw" style="background:var(--urgent)"></span> Urgent / Missing</div>
+      <div class="li"><span class="tag" style="padding:1px 8px">↗ relation</span> links to another database</div>
+    </div>
+  </main>
+</div>
+
+<footer>
+  <span>Care Circle — workspace preview. Example family data, not real records.</span>
+  <span style="margin-left:auto">Not HIPAA storage · not a password manager · not medical, legal, or tax advice.</span>
+</footer>
+
+<script>
+  (function(){
+    var btn=document.getElementById('themebtn');
+    var root=document.documentElement;
+    function sysDark(){return window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;}
+    btn.addEventListener('click',function(){
+      var cur=root.getAttribute('data-theme');
+      var isDark=cur?cur==='dark':sysDark();
+      root.setAttribute('data-theme',isDark?'light':'dark');
+    });
+  })();
+</script>
